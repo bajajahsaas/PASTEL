@@ -76,6 +76,13 @@ To run controlled style classification (i.e., given a text, predict a gender of 
   ./run_classify.sh
 ```
 
+Once, features.dat is created. To run the classifier, run:
+```python classify.py $PROJ $DATADIR $MODELDIR $MAXFEATURE $STYLE $LEVEL $LTYPE $ABLATION $FCHOOSE
+```
+For example:
+```python classify.py PASTEL ../../data/ ../../model/ 70000 gender sentences controlled True False
+```
+
 To run parallel style transfer (i.e., text1 + style -> text2), you can run:
 
 ```shell
