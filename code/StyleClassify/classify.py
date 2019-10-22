@@ -16,8 +16,6 @@ from sklearn import linear_model,svm,neural_network,ensemble
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_recall_fscore_support
 
-from .utils import import_embeddings
-
 def read_feature_names(filename):
     feature_dic = {}
     feature_list = []
@@ -54,8 +52,8 @@ def get_data(features_if, scale=False, n_features = None, split=True, shuffle=Tr
 
 
 
-def classify(model_dir,feature_filename, feature_list_filename, class_filename, ablation, feature_ablation = False):
-
+def classify(model_dir,feature_filename, feature_dat, class_filename, ablation, feature_ablation = False):
+    print('classify', model_dir,feature_filename, feature_dat, class_filename, ablation, feature_ablation )
     ablation_out_filename = 'ablation/ablation_%s.txt' %(ntpath.basename(feature_filename).replace('svmlite.',''))
     log_out_filename = 'log/log_%s.txt' %(ntpath.basename(feature_filename).replace('svmlite.',''))
 
@@ -66,9 +64,9 @@ def classify(model_dir,feature_filename, feature_list_filename, class_filename, 
     # data loading
     ###########################
 
-    feature_dic, feature_list= read_feature_names(model_dir + feature_list_filename)
+    feature_dic, feature_list= read_feature_names(model_dir + feature_dat)
     print ('Num of features:',len(feature_list))
-    classes = read_class_names(model_dir + class_filename)
+    classes = read_class_names(class_filename)
     print ('Num of classes:',len(classes))
 
     if feature_ablation:
@@ -77,7 +75,7 @@ def classify(model_dir,feature_filename, feature_list_filename, class_filename, 
     n_features = None # sum(1 for line in open(args[5])) #None #train_features.shape[1]
     train_features, train_labels, test_features, test_labels = \
             get_data(
-                model_dir+feature_filename,
+                feature_filename,
                 scale=False, n_features=n_features,
                 split=True, shuffle=True, ratio=0.2, feature_ablation=feature_ablation)
 
@@ -302,21 +300,22 @@ def main(args):
 
     if exp_setting == 'combined':
         feature_filename = '%s/svmlite.%s_%s_%s_%d'%(exp_setting,style,exp_setting,level,max_feature)
-        feature_list_filename = 'features.dat'
+        feature_dat = 'features.dat'
         class_filename = '%s/labels.%s_%s_%s_%d.txt'%(exp_setting,style,exp_setting,level,max_feature)
 
         classify(
                 model_dir,
                 feature_filename,
-                feature_list_filename,
+                feature_dat,
                 class_filename,
                 ablation=ablation,
                 feature_ablation = f_idxs)
 
     elif exp_setting == 'controlled':
-        feature_list_filename = 'features.dat'
+        feature_dat = 'features.dat'
         feature_filename_list = sorted(glob.glob(model_dir+ '%s/svmlite.%s_*_%s_%s_%d'%(exp_setting,style,exp_setting,level,max_feature)))
         class_filename_list = sorted(glob.glob(model_dir+ '%s/labels.%s_*_%s_%s_%d.txt'%(exp_setting,style,exp_setting,level,max_feature)))
+
 
         assert len(feature_filename_list) == len(class_filename_list) > 0
         print ('Total number of combination of external features',len(feature_filename_list))
@@ -329,7 +328,7 @@ def main(args):
         for feature_filename, class_filename in zip(feature_filename_list,class_filename_list):
             (train_m_p,train_m_r), (test_m_p,test_m_r), (train_p, train_r), (test_p, test_r) =\
                     classify(model_dir, feature_filename,
-                            feature_list_filename, class_filename, ablation=ablation,
+                            feature_dat, class_filename, ablation=ablation,
                             feature_ablation = f_idxs)
             train_m_ps.append(train_m_p)
             train_m_rs.append(train_m_r)

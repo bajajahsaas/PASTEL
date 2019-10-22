@@ -88,7 +88,7 @@ def add_features(ngram_vocab, emb):
 feature_names = ['f_ngram','f_emb_avg','f_num_entity','f_num_stopwords','f_sent_lens','f_pos_NUM','f_pos_ADP','f_pos_NOUN','f_pos_VERB','f_pos_PROPN','f_pos_ADJ','f_pos_ADV','f_pos_INTJ','f_pos_SYM','f_oov','f_sentiment']
 print ('Total number of types of features: ',len(feature_names))
 idToFeature = None
-feature_output_file = '../../exp/model/' + 'features.dat'
+feature_output_file = '../../model/' + 'features.dat'
 if os.path.isfile(feature_output_file):
     idToFeature = read_features(feature_output_file)
 else:
