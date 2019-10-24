@@ -6,8 +6,12 @@ MODELDIR=../../model/
 W2VDIR=../../data/word2vec/glove.840B.300d.txt
 MAXFEATURE=70000
 
-LTYPES=('controlled' 'combined')
-LEVELS=('sentences' 'stories')
+#LTYPES=('controlled' 'combined')
+#LEVELS=('sentences' 'stories')
+
+LTYPES=('controlled')
+LEVELS=('sentences')
+
 
 for LEVEL in "${LEVELS[@]}"
 do
@@ -22,7 +26,9 @@ do
 
         ABLATION=True #False #True
         FCHOOSES=(False) #'deep' 'lexical' 'syntax' False)
-        STYLES=('gender' 'age' 'education' 'politics')
+
+        #STYLES=('gender' 'age' 'education' 'politics')
+        STYLES=('gender' 'age')
         for FCHOOSE in "${FCHOOSES[@]}"
         do
             for STYLE in "${STYLES[@]}"
