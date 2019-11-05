@@ -299,9 +299,9 @@ def main(args):
 
 
     if exp_setting == 'combined':
-        feature_filename = '%s/svmlite.%s_%s_%s_%d'%(exp_setting,style,exp_setting,level,max_feature)
+        feature_filename = model_dir + '%s/svmlite.%s_%s_%s_%d'%(exp_setting,style,exp_setting,level,max_feature)
         feature_dat = 'features.dat'
-        class_filename = '%s/labels.%s_%s_%s_%d.txt'%(exp_setting,style,exp_setting,level,max_feature)
+        class_filename = model_dir+ '%s/labels.%s_%s_%s_%d.txt'%(exp_setting,style,exp_setting,level,max_feature)
 
         classify(
                 model_dir,

@@ -27,8 +27,8 @@ do
         ABLATION=True #False #True
         FCHOOSES=(False) #'deep' 'lexical' 'syntax' False)
 
-        #STYLES=('gender' 'age' 'education' 'politics')
-        STYLES=('gender' 'age')
+        STYLES=('gender' 'age' 'education' 'politics')
+
         for FCHOOSE in "${FCHOOSES[@]}"
         do
             for STYLE in "${STYLES[@]}"
