@@ -5,10 +5,12 @@ import json
 import operator
 import numpy as np
 from collections import defaultdict
+import torch
 from nltk import word_tokenize
 from sklearn.feature_extraction.text import CountVectorizer
 import spacy
-from utils import import_embeddings,STYLE_ORDER
+from utils import import_w2v_embeddings, STYLE_ORDER
+from transformers import BertModel, BertTokenizer
 
 tokenizer = word_tokenize #TreebankWordTokenizer().tokenize
 nlp = spacy.load('en_core_web_sm')
@@ -97,17 +99,17 @@ idToFeature = dict()
 
 
 
-def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, is_lower=False):
+def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, emb_method, is_lower=False):
     f_sent = {}
-    sent_tks = tokenizer(sent.lower()) if is_lower else tokenizer(sent)
     sent_nlp = nlp(sent)
-
+    sent_tks = tokenizer(sent.lower()) if is_lower else tokenizer(sent)
+    f_sent_lens = len(sent_tks)
     # lexical
     f_ngram = np.array(vect.transform([sent]).todense().tolist()[0]) #.flatten()
     f_num_entity = len(sent_nlp.ents)
     f_num_stopwords = np.sum([1 for w in sent_nlp if w.is_stop])
     # syntax
-    f_sent_lens = len(sent_tks)
+
     f_pos_NUM = np.sum([1 for w in sent_nlp if w.pos_ == 'NUM'])
     f_pos_ADP = np.sum([1 for w in sent_nlp if w.pos_ == 'ADP'])
     f_pos_NOUN = np.sum([1 for w in sent_nlp if w.pos_ == 'NOUN'])
@@ -117,11 +119,24 @@ def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, is_lower=False):
     f_pos_ADV = np.sum([1 for w in sent_nlp if w.pos_ == 'ADV'])
     f_pos_INTJ = np.sum([1 for w in sent_nlp if w.pos_ == 'INTJ'])
     f_pos_SYM = np.sum([1 for w in sent_nlp if w.pos_ == 'SYM'])
+
     # deep
-    tks_in_emb = [w for w in sent_tks if w in emb]
-    if len(tks_in_emb) == 0:
-        return None,None
-    f_emb_avg = np.average([emb[w] for w in tks_in_emb],axis=0)
+    if emb_method == 'w2v':
+        tks_in_emb = [w for w in sent_tks if w in emb]
+        if len(tks_in_emb) == 0:
+            return None,None
+        f_emb_avg = np.average([emb[w] for w in tks_in_emb],axis=0)
+
+    elif emb_method == 'bert':
+        berttokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        model = BertModel.from_pretrained('bert-base-uncased')
+        bert_tokens_sentence = berttokenizer.encode(sent, add_special_tokens=True)
+        with torch.no_grad():
+            bert_embeddings = \
+                model(torch.tensor([bert_tokens_sentence]))[0].squeeze(0).numpy()
+            f_emb_avg = np.mean(bert_embeddings, axis=0)
+            # print('Size of BERT Embdeddings per sentence', bert_embeddings.shape, f_emb_avg.shape)
+
     # oov
     f_oov = np.sum([1 for w in sent_nlp if w.is_oov])
     # semantic
@@ -136,7 +151,7 @@ def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, is_lower=False):
     return f_sent, sent
 
 
-def extract_feature(stories, vect, ngram_vocab, emb,level, is_lower=False):
+def extract_feature(stories, vect, ngram_vocab, emb, emb_method, level, is_lower=False):
     if not (level in ['sentences','stories']):
         print ('Wrong level',level)
         sys.exit(1)
@@ -145,11 +160,11 @@ def extract_feature(stories, vect, ngram_vocab, emb,level, is_lower=False):
     stories_origin = []
     for sid, obj in enumerate(stories):
         if level == 'sentences':
-            f_sent, sent = extract_feature_from_sentence(obj,vect,ngram_vocab,emb,is_lower=is_lower)
+            f_sent, sent = extract_feature_from_sentence(obj,vect,ngram_vocab,emb, emb_method, is_lower=is_lower)
         elif level == 'stories':
             f_sent_avg, sent_avg = [], []
             for sent in obj:
-                f_s, s = extract_feature_from_sentence(sent,vect,ngram_vocab,emb,is_lower=is_lower)
+                f_s, s = extract_feature_from_sentence(sent,vect,ngram_vocab,emb, emb_method, is_lower=is_lower)
                 if f_s is None or s is None:
                     continue
                 f_sent_avg.append(f_s)
@@ -174,7 +189,7 @@ def extract_feature(stories, vect, ngram_vocab, emb,level, is_lower=False):
 
 
 
-def extract_features_combined_persona(dic, vect, ngram_vocab, emb, model_dir, level=0, is_lower=False):
+def extract_features_combined_persona(dic, vect, ngram_vocab, emb, model_dir, emb_method, level=0, is_lower=False):
     id2ngram_vocab = {i:w for w,i in ngram_vocab.items()}
 
     exp_setting = 'combined'
@@ -215,7 +230,7 @@ def extract_features_combined_persona(dic, vect, ngram_vocab, emb, model_dir, le
 
         for value,stories in value_dic.items():
             features,stories = extract_feature(
-                    stories, vect, ngram_vocab, emb, level,is_lower=is_lower)
+                    stories, vect, ngram_vocab, emb, emb_method, level,is_lower=is_lower)
             print (value, len(features),len(stories),' samples')
             for feature,story in zip(features,stories):
                 if level in ['stories','sentences']:
@@ -252,7 +267,7 @@ def extract_features_combined_persona(dic, vect, ngram_vocab, emb, model_dir, le
 
 
 def extract_features_controlled_persona(
-    dic, vect, ngram_vocab, emb, model_dir, level=0, is_lower=False):
+    dic, vect, ngram_vocab, emb, model_dir,  emb_method, level=0, is_lower=False):
     id2ngram_vocab = {i:w for w,i in ngram_vocab.items()}
     exp_setting = 'controlled'
     if not os.path.exists(os.path.join(model_dir,exp_setting)):
@@ -309,7 +324,7 @@ def extract_features_controlled_persona(
                 main_style_type,other_style_tuple_str,exp_setting,level,len(ngram_vocab)),'w') as fout_model_file:
                 for value,stories in other_style_dic.items():
                     features,stories = extract_feature(
-                            stories, vect, ngram_vocab, emb, level,is_lower=is_lower)
+                            stories, vect, ngram_vocab, emb, emb_method, level,is_lower=is_lower)
                     # print (value, len(features),' samples')
                     for feature,story in zip(features,stories):
                         if level == 'sentences': # sentence-level
@@ -425,6 +440,7 @@ def main(args, ngram_size=3, model_dir = '../../exp/model/', is_lower=True):
     max_features = int(args[5]) # maximum number of ngram features (not vocab size)
     level = args[6]
     exp_setting = args[7]
+    emb_method = args[8]
 
     # (1) load dataset (json files)
     train,valid,test = load_dataset(data_dir,level=level)
@@ -440,20 +456,24 @@ def main(args, ngram_size=3, model_dir = '../../exp/model/', is_lower=True):
             ngram_size=ngram_size,
             max_features=max_features,
             is_lower=is_lower )
-    emb = import_embeddings(w2v_dir, vocab, project)
 
-    # (4) add features
+    if emb_method  == 'w2v':
+        emb = import_w2v_embeddings(w2v_dir, vocab, project)
+    elif emb_method == 'bert':
+        emb = None
+
+    # (4) add features (emb not used inside)
     add_features(ngram_vocab, emb)
 
     # (5) Extracting features
     if exp_setting == 'combined':
         extract_features_combined_persona(
                 combined_dic, vect=vect, ngram_vocab = ngram_vocab, emb=emb,
-                model_dir=model_dir, level=level, is_lower=is_lower) #, max_sent=max_sent)
+                model_dir=model_dir, emb_method = emb_method, level=level, is_lower=is_lower) #, max_sent=max_sent)
     elif exp_setting == 'controlled':
         extract_features_controlled_persona(
                 controlled_dic, vect=vect, ngram_vocab = ngram_vocab, emb=emb,
-                model_dir=model_dir, level=level, is_lower=is_lower) #, max_sent=max_sent)
+                model_dir=model_dir, emb_method = emb_method, level=level, is_lower=is_lower) #, max_sent=max_sent)
 
 
 if __name__ == '__main__': main(sys.argv)

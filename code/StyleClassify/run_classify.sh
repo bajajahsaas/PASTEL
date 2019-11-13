@@ -11,18 +11,19 @@ MAXFEATURE=70000
 
 LTYPES=('controlled')
 LEVELS=('sentences')
-
+#EMD='w2v'
+EMB='bert'
 
 for LEVEL in "${LEVELS[@]}"
 do
     for LTYPE in "${LTYPES[@]}"
     do
         echo "=============================================="
-        echo "Extracting features..." $PROJ $DATADIR $MODELDIR $MAXFEATURE $LEVEL $LTYPE
+        echo "Extracting features..." $PROJ $DATADIR $MODELDIR $MAXFEATURE $LEVEL $LTYPE $EMB
         echo "=============================================="
         python feature_extract.py \
             $PROJ $DATADIR $MODELDIR $W2VDIR \
-            $MAXFEATURE $LEVEL $LTYPE
+            $MAXFEATURE $LEVEL $LTYPE $EMB
 
         ABLATION=True #False #True
         FCHOOSES=(False) #'deep' 'lexical' 'syntax' False)

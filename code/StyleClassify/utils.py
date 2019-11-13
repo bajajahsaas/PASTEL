@@ -5,7 +5,7 @@ import numpy as np
 
 STYLE_ORDER = ['gender', 'country', 'age', 'ethnic', 'education', 'politics', 'tod']
 
-def import_embeddings(filename, vocab=False, project=False):
+def import_w2v_embeddings(filename, vocab=False, project=False):
     # import pdb; pdb.set_trace()
     if vocab is False:
         print('Loading gensim embedding from ',filename)
