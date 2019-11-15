@@ -163,7 +163,6 @@ def extract_feature(stories, vect, ngram_vocab, emb, emb_method, level, is_lower
     stories_origin = []
     for sid, obj in enumerate(stories):
         if level == 'sentences':
-            print("getting bert features for sentences", sid)
             f_sent, sent = extract_feature_from_sentence(obj,vect,ngram_vocab,emb, emb_method, is_lower=is_lower)
         elif level == 'stories':
             f_sent_avg, sent_avg = [], []
