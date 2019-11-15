@@ -25,23 +25,23 @@ do
             $PROJ $DATADIR $MODELDIR $W2VDIR \
             $MAXFEATURE $LEVEL $LTYPE $EMB
 
-        ABLATION=True #False #True
-        FCHOOSES=(False) #'deep' 'lexical' 'syntax' False)
-
-        STYLES=('gender' 'age' 'education' 'politics')
-
-        for FCHOOSE in "${FCHOOSES[@]}"
-        do
-            for STYLE in "${STYLES[@]}"
-            do
-                echo "=============================================="
-                echo "Classifying..." $PROJ $DATADIR $MODELDIR $MAXFEATURE $STYLE $LTYPE $LEVEL $ABLATION $FCHOOSE $FCHOOSE
-                echo "=============================================="
-                python classify.py \
-                    $PROJ $DATADIR $MODELDIR $MAXFEATURE \
-                    $STYLE $LEVEL $LTYPE $ABLATION $FCHOOSE
-            done
-        done
+#        ABLATION=True #False #True
+#        FCHOOSES=(False) #'deep' 'lexical' 'syntax' False)
+#
+#        STYLES=('gender' 'age' 'education' 'politics')
+#
+#        for FCHOOSE in "${FCHOOSES[@]}"
+#        do
+#            for STYLE in "${STYLES[@]}"
+#            do
+#                echo "=============================================="
+#                echo "Classifying..." $PROJ $DATADIR $MODELDIR $MAXFEATURE $STYLE $LTYPE $LEVEL $ABLATION $FCHOOSE $FCHOOSE
+#                echo "=============================================="
+#                python classify.py \
+#                    $PROJ $DATADIR $MODELDIR $MAXFEATURE \
+#                    $STYLE $LEVEL $LTYPE $ABLATION $FCHOOSE
+#            done
+#        done
     done
 done
 
