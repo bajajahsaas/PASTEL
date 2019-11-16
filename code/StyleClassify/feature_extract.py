@@ -9,13 +9,12 @@ import torch
 from nltk import word_tokenize
 from sklearn.feature_extraction.text import CountVectorizer
 import spacy
+from torch import nn
 from utils import import_w2v_embeddings, STYLE_ORDER
 import logging
 
 logging.basicConfig(level=logging.DEBUG, filename="LOG_FILENAME")
 from transformers import BertModel, BertTokenizer
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 
 tokenizer = word_tokenize #TreebankWordTokenizer().tokenize
 nlp = spacy.load('en_core_web_sm')
@@ -134,9 +133,9 @@ def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, emb_method, is_lowe
 
     elif emb_method == 'bert':
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print("Device", device)
         berttokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         model = BertModel.from_pretrained('bert-base-uncased')
+        model = nn.DataParallel(model)
         model = model.to(device)
         bert_tokens_sentence = berttokenizer.encode(sent, add_special_tokens=True)
         with torch.no_grad():
@@ -441,6 +440,7 @@ def get_dic(data, verbose=False, limit=False):
 
 
 def main(args, ngram_size=3, model_dir = '../../exp/model/', is_lower=True):
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
     project = args[1]
     data_dir = args[2]
     model_dir = args[3]
