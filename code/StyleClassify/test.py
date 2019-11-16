@@ -7,7 +7,8 @@ import os
 
 sent = "He has tons of stuff to throw away."
 
-os.environ["CUDA_VISIBLE_DEVICES"] = 0,1,2
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device", device)
 berttokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
