@@ -134,6 +134,7 @@ def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, emb_method, is_lowe
 
     elif emb_method == 'bert':
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("Device", device)
         berttokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         model = BertModel.from_pretrained('bert-base-uncased')
         model = model.to(device)
