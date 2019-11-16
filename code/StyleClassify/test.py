@@ -1,6 +1,8 @@
 import torch
 import logging
 import numpy as np
+from torch import nn
+
 logging.basicConfig(level=logging.DEBUG, filename="LOG_FILENAME")
 from transformers import BertModel, BertTokenizer
 import os
@@ -13,6 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device", device)
 berttokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertModel.from_pretrained('bert-base-uncased')
+model = nn.DataParallel(model)
 model = model.to(device)
 bert_tokens_sentence = berttokenizer.encode(sent, add_special_tokens=True)
 with torch.no_grad():
