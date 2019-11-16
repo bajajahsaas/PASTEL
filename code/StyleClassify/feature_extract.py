@@ -15,6 +15,8 @@ import logging
 logging.basicConfig(level=logging.DEBUG, filename="LOG_FILENAME")
 from transformers import BertModel, BertTokenizer
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
+
 tokenizer = word_tokenize #TreebankWordTokenizer().tokenize
 nlp = spacy.load('en_core_web_sm')
 
@@ -134,12 +136,12 @@ def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, emb_method, is_lowe
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         berttokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         model = BertModel.from_pretrained('bert-base-uncased')
-        model.to(device)
+        model = model.to(device)
         bert_tokens_sentence = berttokenizer.encode(sent, add_special_tokens=True)
         with torch.no_grad():
             bert_embeddings = \
-                model(torch.tensor([bert_tokens_sentence]).to(device))[0].squeeze(0).numpy()
-            f_emb_avg = np.mean(bert_embeddings, axis=0)
+                model(torch.tensor([bert_tokens_sentence]).to(device))[0].squeeze(0)
+            f_emb_avg = torch.mean(bert_embeddings, axis=0).cpu().numpy()
             # print('Size of BERT Embdeddings per sentence', bert_embeddings.shape, f_emb_avg.shape)
 
     # oov
