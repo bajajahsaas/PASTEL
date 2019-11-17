@@ -10,7 +10,7 @@ from nltk import word_tokenize
 from sklearn.feature_extraction.text import CountVectorizer
 import spacy
 from torch import nn
-from utils import import_w2v_embeddings, STYLE_ORDER
+from utils import import_w2v_embeddings, STYLE_ORDER, import_bert_embeddings
 import logging
 
 logging.basicConfig(level=logging.DEBUG, filename="LOG_FILENAME")
@@ -73,7 +73,7 @@ def get_lexical_features(data, level, ngram_size, max_features, is_lower=False):
     vocab = {k:v for k,v in ngram_vocab.items() if len(k.split(' '))==1}
     print ('ngram Vocab size:', len(ngram_vocab))
     print ('unigram Vocab size:', len(vocab))
-    return vect,ngram_vocab,vocab
+    return vect,ngram_vocab,vocab,sents
 
 
 
@@ -132,17 +132,10 @@ def extract_feature_from_sentence(sent,vect,ngram_vocab,emb, emb_method, is_lowe
         f_emb_avg = np.average([emb[w] for w in tks_in_emb],axis=0)
 
     elif emb_method == 'bert':
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        berttokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        model = BertModel.from_pretrained('bert-base-uncased')
-        model = nn.DataParallel(model)
-        model = model.to(device)
-        bert_tokens_sentence = berttokenizer.encode(sent, add_special_tokens=True)
-        with torch.no_grad():
-            bert_embeddings = \
-                model(torch.tensor([bert_tokens_sentence]).to(device))[0].squeeze(0)
-            f_emb_avg = torch.mean(bert_embeddings, axis=0).cpu().numpy()
-            # print('Size of BERT Embdeddings per sentence', bert_embeddings.shape, f_emb_avg.shape)
+        if sent not in emb:
+            print("Bert embedding missing for sentence:" , sent)
+        else:
+            f_emb_avg = emb[sent]
 
     # oov
     f_oov = np.sum([1 for w in sent_nlp if w.is_oov])
@@ -459,16 +452,16 @@ def main(args, ngram_size=3, model_dir = '../../exp/model/', is_lower=True):
     combined_dic, controlled_dic = get_dic(data) #, limit=500)
 
     # (3) feature engineering
-    vect, ngram_vocab, vocab = get_lexical_features(
+    vect, ngram_vocab, vocab, allsentences = get_lexical_features(
             data,level,
             ngram_size=ngram_size,
             max_features=max_features,
             is_lower=is_lower )
 
     if emb_method  == 'w2v':
-        emb = import_w2v_embeddings(w2v_dir, vocab, project)
+        emb = import_w2v_embeddings(w2v_dir, vocab, project, allsentences)
     elif emb_method == 'bert':
-        emb = None
+        emb = import_bert_embeddings(allsentences, vocab, project)
 
     # (4) add features (emb not used inside)
     add_features(ngram_vocab, emb)
