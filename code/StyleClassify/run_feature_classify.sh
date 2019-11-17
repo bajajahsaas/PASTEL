@@ -28,6 +28,13 @@ for LEVEL in "${LEVELS[@]}"
 do
     for LTYPE in "${LTYPES[@]}"
     do
+        echo "=============================================="
+        echo "Extracting features..." $PROJ $DATADIR $MODELDIR $MAXFEATURE $LEVEL $LTYPE $EMB
+        echo "=============================================="
+        python -u feature_extract.py \
+            $PROJ $DATADIR $MODELDIR $W2VDIR \
+            $MAXFEATURE $LEVEL $LTYPE $EMB
+
         ABLATION=True #False #True
         FCHOOSES=(False) #'deep' 'lexical' 'syntax' False)
 
