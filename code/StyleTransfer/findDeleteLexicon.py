@@ -81,7 +81,7 @@ threshold=0.9
 
 for lineIndex,line in enumerate(srcFile.readlines()):
     if lineIndex%100==0:
-        print "Line Index:",lineIndex
+        print("Line Index:",lineIndex)
     srcLineWords=line.split()
 
     header=" ".join(srcLineWords[:headerLength])
