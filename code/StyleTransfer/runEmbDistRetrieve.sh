@@ -9,7 +9,7 @@
 #SBATCH --ntasks=1
 
 
-export CUDA_VISIBLE_DEVICES=0,1,2
+export CUDA_VISIBLE_DEVICES=1
 
 python -u findDeleteLexicon.py STYLED 7
 python -u computeNLGEvalMetrics.py data/test.STYLED.src.delete data/test.STYLED.tgt

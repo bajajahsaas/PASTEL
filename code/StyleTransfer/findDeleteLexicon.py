@@ -51,6 +51,8 @@ def findCBOWDistance(ref,hyp):
 headerLength=int(sys.argv[2])
 prefix=sys.argv[1]
 
+print("Args: ", prefix, headerLength)
+
 srcFile=open("data/train."+prefix+".src")
 tgtFile=open("data/train."+prefix+".tgt")
 

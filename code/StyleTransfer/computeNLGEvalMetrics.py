@@ -2,6 +2,7 @@ from nlgeval import compute_metrics
 import sys
 import os
 
+print('hypothesis= ',sys.argv[1], 'references= ',sys.argv[2])
 metrics_dist = compute_metrics(hypothesis=sys.argv[1], references=[sys.argv[2], ], no_skipthoughts=True)
 
 BLEUOutput = os.popen("perl multi-bleu.perl -lc "+sys.argv[2]+" < "+sys.argv[1]).read()
