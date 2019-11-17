@@ -41,7 +41,7 @@ do
                 echo "=============================================="
                 echo "Classifying..." $PROJ $DATADIR $MODELDIR $MAXFEATURE $STYLE $LTYPE $LEVEL $ABLATION $FCHOOSE $FCHOOSE
                 echo "=============================================="
-                python classify.py \
+                python -u classify.py \
                     $PROJ $DATADIR $MODELDIR $MAXFEATURE \
                     $STYLE $LEVEL $LTYPE $ABLATION $FCHOOSE
             done

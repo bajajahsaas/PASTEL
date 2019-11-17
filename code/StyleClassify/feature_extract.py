@@ -77,12 +77,12 @@ def get_lexical_features(data, level, ngram_size, max_features, is_lower=False):
 
 
 
-def add_features(ngram_vocab, emb):
+def add_features(ngram_vocab, emb_feats_len):
     id2ngram_vocab = {i:w for w,i in ngram_vocab.items()}
     for fid in sorted(id2ngram_vocab.keys()):
         ngram = id2ngram_vocab[fid]
         addFeatureToDict(ngram) #'ngram_'+
-    for f in range(300):
+    for f in range(emb_feats_len):
         addFeatureToDict('emb'+str(f))
     for f in ['f_num_entity','f_num_stopwords', 'f_sent_lens','f_pos_NUM','f_pos_ADP','f_pos_NOUN','f_pos_VERB','f_pos_PROPN','f_pos_ADJ','f_pos_ADV','f_pos_INTJ','f_pos_SYM','f_oov','f_sentiment']:
         addFeatureToDict(f)
@@ -460,11 +460,13 @@ def main(args, ngram_size=3, model_dir = '../../exp/model/', is_lower=True):
 
     if emb_method  == 'w2v':
         emb = import_w2v_embeddings(w2v_dir, vocab, project, allsentences)
+        emb_feats_len = 300
     elif emb_method == 'bert':
         emb = import_bert_embeddings(allsentences, vocab, project)
+        emb_feats_len = 768
 
     # (4) add features (emb not used inside)
-    add_features(ngram_vocab, emb)
+    add_features(ngram_vocab, emb_feats_len)
 
     # (5) Extracting features
     if exp_setting == 'combined':
