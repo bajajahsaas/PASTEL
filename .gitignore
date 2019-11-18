@@ -1,4 +1,6 @@
-code/nlg-eval/
 data/sentences/
 data/stories/
 data/word2vec/
+code/StyleTransfer/glove/*.p
+code/StyleTransfer/glove/*.vec
+code/StyleTransfer/data/

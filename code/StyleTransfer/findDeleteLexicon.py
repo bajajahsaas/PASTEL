@@ -51,6 +51,8 @@ def findCBOWDistance(ref,hyp):
 headerLength=int(sys.argv[2])
 prefix=sys.argv[1]
 
+print("Args: ", prefix, headerLength)
+
 srcFile=open("data/train."+prefix+".src")
 tgtFile=open("data/train."+prefix+".tgt")
 
@@ -79,7 +81,7 @@ threshold=0.9
 
 for lineIndex,line in enumerate(srcFile.readlines()):
     if lineIndex%100==0:
-        print "Line Index:",lineIndex
+        print("Line Index:",lineIndex)
     srcLineWords=line.split()
 
     header=" ".join(srcLineWords[:headerLength])
