@@ -1,3 +1,4 @@
+#!/bin/bash
 #SBATCH --job-name=styletrans
 #SBATCH --output=logsmodel/st_%j.txt  # output file
 #SBATCH -e logsmodel/st_%j.err        # File to which STDERR will be written
