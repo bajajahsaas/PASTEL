@@ -1,28 +1,27 @@
 '''
 Skip-thought vectors
 '''
-import copy
 import os
-from collections import OrderedDict, defaultdict
 
-import nltk
-import numpy
-import six
 import theano
 import theano.tensor as tensor
-from nltk.tokenize import word_tokenize
+
+import cPickle as pkl
+import numpy
+import copy
+import nltk
+
+from collections import OrderedDict, defaultdict
 from scipy.linalg import norm
-from six.moves import cPickle as pkl
-from nlgeval.utils import get_data_dir
-import logging
+from nltk.tokenize import word_tokenize
 
 profile = False
 
 #-----------------------------------------------------------------------------#
 # Specify model and table locations here
 #-----------------------------------------------------------------------------#
-path_to_models = get_data_dir()
-path_to_tables = get_data_dir()
+path_to_models = os.path.join(os.path.dirname(__file__), '..', 'data')
+path_to_tables = os.path.join(os.path.dirname(__file__), '..', 'data')
 #-----------------------------------------------------------------------------#
 
 path_to_umodel = os.path.join(path_to_models, 'uni_skip.npz')
@@ -77,8 +76,8 @@ def load_tables():
     Load the tables
     """
     words = []
-    utable = numpy.load(os.path.join(path_to_tables, 'utable.npy'), allow_pickle=True, encoding='bytes')
-    btable = numpy.load(os.path.join(path_to_tables, 'btable.npy'), allow_pickle=True,  encoding='bytes')
+    utable = numpy.load(os.path.join(path_to_tables, 'utable.npy'))
+    btable = numpy.load(os.path.join(path_to_tables, 'btable.npy'))
     f = open(os.path.join(path_to_tables, 'dictionary.txt'), 'rb')
     for line in f:
         words.append(line.decode('utf-8').strip())
@@ -126,8 +125,8 @@ def encode(model, X, use_norm=True, verbose=True, batch_size=128, use_eos=False)
     # Get features. This encodes by length, in order to avoid wasting computation
     for k in ds.keys():
         if verbose:
-            print(k)
-        numbatches = int(len(ds[k]) / batch_size + 1)
+            print k
+        numbatches = len(ds[k]) / batch_size + 1
         for minibatch in range(numbatches):
             caps = ds[k][minibatch::numbatches]
 
@@ -195,10 +194,10 @@ def nn(model, text, vectors, query, k=5):
     scores = numpy.dot(qf, vectors.T).flatten()
     sorted_args = numpy.argsort(scores)[::-1]
     sentences = [text[a] for a in sorted_args[:k]]
-    print('QUERY: ' + query)
-    print('NEAREST: ')
+    print 'QUERY: ' + query
+    print 'NEAREST: '
     for i, s in enumerate(sentences):
-        print(s, sorted_args[i])
+        print s, sorted_args[i]
 
 
 def word_features(table):
@@ -222,10 +221,10 @@ def nn_words(table, wordvecs, query, k=10):
     scores = numpy.dot(qf, wordvecs.T).flatten()
     sorted_args = numpy.argsort(scores)[::-1]
     words = [keys[a] for a in sorted_args[:k]]
-    print('QUERY: ' + query)
-    print('NEAREST: ')
+    print 'QUERY: ' + query
+    print 'NEAREST: '
     for i, w in enumerate(words):
-        print(w)
+        print w
 
 
 def _p(pp, name):
@@ -240,7 +239,7 @@ def init_tparams(params):
     initialize Theano shared variables according to the initial parameters
     """
     tparams = OrderedDict()
-    for kk, pp in six.iteritems(params):
+    for kk, pp in params.iteritems():
         tparams[kk] = theano.shared(params[kk], name=kk)
     return tparams
 
@@ -250,9 +249,9 @@ def load_params(path, params):
     load parameters
     """
     pp = numpy.load(path)
-    for kk, vv in six.iteritems(params):
+    for kk, vv in params.iteritems():
         if kk not in pp:
-            logging.warning('%s is not in the archive', kk)
+            warnings.warn('%s is not in the archive'%kk)
             continue
         params[kk] = pp[kk]
     return params

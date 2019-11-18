@@ -1,20 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
 from __future__ import print_function
-
-import six
-from six.moves import map
-
 from nlgeval.pycocoevalcap.bleu.bleu import Bleu
-from nlgeval.pycocoevalcap.cider.cider import Cider
 from nlgeval.pycocoevalcap.meteor.meteor import Meteor
 from nlgeval.pycocoevalcap.rouge.rouge import Rouge
-
-
-# str/unicode stripping in Python 2 and 3 instead of `str.strip`.
-def _strip(s):
-    return s.strip()
-
+from nlgeval.pycocoevalcap.cider.cider import Cider
 
 def compute_metrics(hypothesis, references, no_overlap=False, no_skipthoughts=False, no_glove=False):
     with open(hypothesis, 'r') as f:
@@ -23,7 +13,7 @@ def compute_metrics(hypothesis, references, no_overlap=False, no_skipthoughts=Fa
     for iidx, reference in enumerate(references):
         with open(reference, 'r') as f:
             ref_list.append(f.readlines())
-    ref_list = [list(map(_strip, refs)) for refs in zip(*ref_list)]
+    ref_list = [map(str.strip, refs) for refs in zip(*ref_list)]
     refs = {idx: strippedlines for (idx, strippedlines) in enumerate(ref_list)}
     hyps = {idx: [lines.strip()] for (idx, lines) in enumerate(hyp_list)}
     assert len(refs) == len(hyps)
@@ -45,7 +35,6 @@ def compute_metrics(hypothesis, references, no_overlap=False, no_skipthoughts=Fa
             else:
                 print("%s: %0.6f" % (method, score))
                 ret_scores[method] = score
-        del scorers
 
     if not no_skipthoughts:
         from nlgeval.skipthoughts import skipthoughts
@@ -57,11 +46,10 @@ def compute_metrics(hypothesis, references, no_overlap=False, no_skipthoughts=Fa
         vector_hyps = encoder.encode([h.strip() for h in hyp_list], verbose=False)
         ref_list_T = np.array(ref_list).T.tolist()
         vector_refs = map(lambda refl: encoder.encode([r.strip() for r in refl], verbose=False), ref_list_T)
-        cosine_similarity = list(map(lambda refv: cosine_similarity(refv, vector_hyps).diagonal(), vector_refs))
+        cosine_similarity = map(lambda refv: cosine_similarity(refv, vector_hyps).diagonal(), vector_refs)
         cosine_similarity = np.max(cosine_similarity, axis=0).mean()
         print("SkipThoughtsCosineSimilairty: %0.6f" % (cosine_similarity))
         ret_scores['SkipThoughtCS'] = cosine_similarity
-        del model
 
     if not no_glove:
         from nlgeval.word2vec.evaluate import eval_emb_metrics
@@ -82,9 +70,9 @@ def compute_metrics(hypothesis, references, no_overlap=False, no_skipthoughts=Fa
 
 
 def compute_individual_metrics(ref, hyp, no_overlap=False, no_skipthoughts=False, no_glove=False):
-    assert isinstance(hyp, six.string_types)
+    assert isinstance(hyp, str)
 
-    if isinstance(ref, six.string_types):
+    if isinstance(ref, str):
         ref = ref.split('||<|>||')  # special delimiter for backward compatibility
     ref = [a.strip() for a in ref]
     refs = {0: ref}
@@ -119,7 +107,7 @@ def compute_individual_metrics(ref, hyp, no_overlap=False, no_skipthoughts=False
         vector_hyps = encoder.encode([h.strip() for h in hyp_list], verbose=False)
         ref_list_T = np.array(ref_list).T.tolist()
         vector_refs = map(lambda refl: encoder.encode([r.strip() for r in refl], verbose=False), ref_list_T)
-        cosine_similarity = list(map(lambda refv: cosine_similarity(refv, vector_hyps).diagonal(), vector_refs))
+        cosine_similarity = map(lambda refv: cosine_similarity(refv, vector_hyps).diagonal(), vector_refs)
         cosine_similarity = np.max(cosine_similarity, axis=0).mean()
         ret_scores['SkipThoughtCS'] = cosine_similarity
 
@@ -140,81 +128,27 @@ def compute_individual_metrics(ref, hyp, no_overlap=False, no_skipthoughts=False
     return ret_scores
 
 
-class NLGEval(object):
-    glove_metrics = {
-        'EmbeddingAverageCosineSimilairty',
-        'VectorExtremaCosineSimilarity',
-        'GreedyMatchingScore',
-    }
-
-    valid_metrics = {
-                        # Overlap
-                        'Bleu_1', 'Bleu_2', 'Bleu_3', 'Bleu_4',
-                        'METEOR',
-                        'ROUGE_L',
-                        'CIDEr',
-
-                        # Skip-thought
-                        'SkipThoughtCS',
-                    } | glove_metrics
-
-    def __init__(self, no_overlap=False, no_skipthoughts=False, no_glove=False,
-                 metrics_to_omit=None):
-        """
-        :param no_overlap: Default: Use overlap metrics.
-            `True` if these metrics should not be used.
-        :type no_overlap: bool
-        :param no_skipthoughts: Default: Use the skip-thoughts metric.
-            `True` if this metrics should not be used.
-        :type no_skipthoughts: bool
-        :param no_glove: Default: Use GloVe based metrics.
-            `True` if these metrics should not be used.
-        :type no_glove: bool
-        :param metrics_to_omit: Default: Use all metrics. See `NLGEval.valid_metrics` for all metrics.
-            The previous parameters will override metrics in this one if they are set.
-            Metrics to omit. Omitting Bleu_{i} will omit Bleu_{j} for j>=i.
-        :type metrics_to_omit: Optional[Collection[str]]
-        """
-
-        if metrics_to_omit is None:
-            self.metrics_to_omit = set()
-        else:
-            self.metrics_to_omit = set(metrics_to_omit)
-        assert len(self.metrics_to_omit - self.valid_metrics) == 0, \
-            "Invalid metrics to omit: {}".format(self.metrics_to_omit - self.valid_metrics)
-
+class NLGEval:
+    def __init__(self, no_overlap=False, no_skipthoughts=False, no_glove=False):
         self.no_overlap = no_overlap
         if not no_overlap:
             self.load_scorers()
 
-        self.no_skipthoughts = no_skipthoughts or 'SkipThoughtCS' in self.metrics_to_omit
+        self.no_skipthoughts = no_skipthoughts
         if not self.no_skipthoughts:
             self.load_skipthought_model()
 
-        self.no_glove = no_glove or len(self.glove_metrics - self.metrics_to_omit) == 0
+        self.no_glove = no_glove
         if not self.no_glove:
             self.load_glove()
 
     def load_scorers(self):
-        self.scorers = []
-
-        omit_bleu_i = False
-        for i in range(1, 4 + 1):
-            if 'Bleu_{}'.format(i) in self.metrics_to_omit:
-                omit_bleu_i = True
-                if i > 1:
-                    self.scorers.append((Bleu(i - 1), ['Bleu_{}'.format(j) for j in range(1, i)]))
-                break
-        if not omit_bleu_i:
-            self.scorers.append((Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]))
-
-        if 'METEOR' not in self.metrics_to_omit:
-            self.scorers.append((Meteor(), "METEOR"))
-        if 'ROUGE_L' not in self.metrics_to_omit:
-            self.scorers.append((Rouge(), "ROUGE_L"))
-        if 'CIDEr' not in self.metrics_to_omit:
-            self.scorers.append((Cider(), "CIDEr"))
-
+        self.scorers = [
+            (Bleu(4), ["Bleu_1", "Bleu_2", "Bleu_3", "Bleu_4"]),
+            (Meteor(), "METEOR"),
+            (Rouge(), "ROUGE_L"),
+            (Cider(), "CIDEr")
+        ]
 
     def load_skipthought_model(self):
         from nlgeval.skipthoughts import skipthoughts
@@ -235,7 +169,7 @@ class NLGEval(object):
         self.glove_emb = Embedding()
 
     def compute_individual_metrics(self, ref, hyp):
-        assert isinstance(hyp, six.string_types)
+        assert isinstance(hyp, str)
         ref = [a.strip() for a in ref]
         refs = {0: ref}
         ref_list = [ref]
@@ -257,7 +191,7 @@ class NLGEval(object):
             vector_hyps = self.skipthought_encoder.encode([h.strip() for h in hyp_list], verbose=False)
             ref_list_T = self.np.array(ref_list).T.tolist()
             vector_refs = map(lambda refl: self.skipthought_encoder.encode([r.strip() for r in refl], verbose=False), ref_list_T)
-            cosine_similarity = list(map(lambda refv: self.cosine_similarity(refv, vector_hyps).diagonal(), vector_refs))
+            cosine_similarity = map(lambda refv: self.cosine_similarity(refv, vector_hyps).diagonal(), vector_refs)
             cosine_similarity = self.np.max(cosine_similarity, axis=0).mean()
             ret_scores['SkipThoughtCS'] = cosine_similarity
 
@@ -265,8 +199,7 @@ class NLGEval(object):
             glove_hyps = [h.strip() for h in hyp_list]
             ref_list_T = self.np.array(ref_list).T.tolist()
             glove_refs = map(lambda refl: [r.strip() for r in refl], ref_list_T)
-            scores = self.eval_emb_metrics(glove_hyps, glove_refs, emb=self.glove_emb,
-                                           metrics_to_omit=self.metrics_to_omit)
+            scores = self.eval_emb_metrics(glove_hyps, glove_refs, emb=self.glove_emb)
             scores = scores.split('\n')
             for score in scores:
                 name, value = score.split(':')
@@ -276,7 +209,7 @@ class NLGEval(object):
         return ret_scores
 
     def compute_metrics(self, ref_list, hyp_list):
-        ref_list = [list(map(_strip, refs)) for refs in zip(*ref_list)]
+        ref_list = [map(str.strip, refs) for refs in zip(*ref_list)]
         refs = {idx: strippedlines for (idx, strippedlines) in enumerate(ref_list)}
         hyps = {idx: [lines.strip()] for (idx, lines) in enumerate(hyp_list)}
         assert len(refs) == len(hyps)
@@ -295,7 +228,7 @@ class NLGEval(object):
             vector_hyps = self.skipthought_encoder.encode([h.strip() for h in hyp_list], verbose=False)
             ref_list_T = self.np.array(ref_list).T.tolist()
             vector_refs = map(lambda refl: self.skipthought_encoder.encode([r.strip() for r in refl], verbose=False), ref_list_T)
-            cosine_similarity = list(map(lambda refv: self.cosine_similarity(refv, vector_hyps).diagonal(), vector_refs))
+            cosine_similarity = map(lambda refv: self.cosine_similarity(refv, vector_hyps).diagonal(), vector_refs)
             cosine_similarity = self.np.max(cosine_similarity, axis=0).mean()
             ret_scores['SkipThoughtCS'] = cosine_similarity
 
