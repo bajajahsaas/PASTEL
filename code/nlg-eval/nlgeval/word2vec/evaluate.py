@@ -2,13 +2,13 @@
 # Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
 import os
 import numpy as np
-from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 
 
 class Embedding(object):
     def __init__(self):
         path = os.path.join(os.path.dirname(__file__), '..', 'data')
-        self.m = Word2Vec.load(os.path.join(path, 'glove.6B.300d.model.bin'), mmap='r')
+        self.m = KeyedVectors.load(os.path.join(path, 'glove.6B.300d.model.bin'), mmap='r')
         self.unk = self.m.wv.wv.syn0.mean(axis=0)
 
     @property
