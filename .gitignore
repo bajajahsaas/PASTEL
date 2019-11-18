@@ -1,3 +1,5 @@
 data/sentences/
 data/stories/
 data/word2vec/
+code/StyleTransfer/glove/*
+code/StyleTransfer/data/*
