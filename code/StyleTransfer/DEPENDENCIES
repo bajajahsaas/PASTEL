@@ -1,20 +1,3 @@
-Skip to content
-Search or jump to…
-
-Pull requests
-Issues
-Marketplace
-Explore
-
-@bajajahsaas
-2
-113dykang/PASTEL
- Code Issues 0 Pull requests 0 Actions Projects 0 Wiki Security Insights
-PASTEL/code/StyleTransfer/DEPENDENCIES
-@vgtomahawk vgtomahawk Update DEPENDENCIES
-d997339 4 days ago
-39 lines (22 sloc)  1.91 KB
-
 Code:
 
 [Python 2.7.14] is the version of python we have. Mostly though, any version of Python 2.7 should work fine and the last index shoudln't be an issue
@@ -53,15 +36,3 @@ Additionally, each line in .src is prepended with a canonical sequence of style 
 
 Our S2S models explicitly treat these style attribute tokens just like normal tokens.
 For other models, you may just strip these way in your code and use them as the target style label.
-© 2019 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
