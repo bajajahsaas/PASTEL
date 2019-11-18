@@ -4,14 +4,3 @@ data/word2vec/
 code/StyleTransfer/glove/*.p
 code/StyleTransfer/glove/*.vec
 code/StyleTransfer/data/
-code/nlg-eval/nlgeval/data/
-code/nlg-eval/dist
-code/nlg-eval/build
-code/StyleClassify/*.out
-code/StyleClassify/LOG_FILENAME
-code/StyleClassify/__pycache__/
-code/StyleClassify/ablation/
-code/StyleClassify/log/
-code/StyleClassify/logs/
-data/data
-model/
