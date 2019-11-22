@@ -14,7 +14,7 @@
 #do
 #    echo "----------------------"
 #    echo "Training Model For $sty"
-#    CUDA_VISIBLE_DEVICES=2 python -u main.py -mode=train -initGlove2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=7 | tee logs/${modelName}_$sty
+#    CUDA_VISIBLE_DEVICES=2 python -u main.py -mode=train -initGlove2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=7 | tee logsmodel/${modelName}_$sty
 #    echo "Finished Training Model for $sty"
 #    echo "----------xxx------------------"
 #done
@@ -25,7 +25,7 @@ for sty in STYLED #ethnic gender Country edu TOD #Politics
 do
     echo "----------------------"
     echo "Training Model For $sty"
-    CUDA_VISIBLE_DEVICES="1" python -u main.py -mode=train -preTrain -NUM_PRETRAIN_EPOCHS=4 -initGlove2 -initGloveEncode2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=6 | tee logs/${modelName}_$sty
+    CUDA_VISIBLE_DEVICES="1" python -u main.py -mode=train -preTrain -NUM_PRETRAIN_EPOCHS=4 -initGlove2 -initGloveEncode2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=6 | tee logsmodel/${modelName}_$sty
     echo "Finished Training Model for $sty"
     echo "----------xxx------------------"
 done
@@ -36,7 +36,7 @@ done
 #do
 #    echo "----------------------"
 #    echo "Training Model For $sty"
-#    CUDA_VISIBLE_DEVICES=2 python -u main.py -mode=train -batch_size=8  -sigmoid -initGlove2 -initGloveEncode2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=15 | tee logs/${modelName}_$sty
+#    CUDA_VISIBLE_DEVICES=2 python -u main.py -mode=train -batch_size=8  -sigmoid -initGlove2 -initGloveEncode2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=15 | tee logsmodel/${modelName}_$sty
 #    echo "Finished Training Model for $sty"
 #    echo "----------xxx------------------"
 #done
@@ -46,7 +46,7 @@ done
 #do
 #    echo "----------------------"
 #    echo "Training Model For $sty"
-#    CUDA_VISIBLE_DEVICES=0 python -u main.py -mode=train -initGlove -modelName=simpleModelGlove_$sty -emb_size=300 -hidden_size=384  -problem=$sty | tee logs/simpleModelGlove_$sty
+#    CUDA_VISIBLE_DEVICES=0 python -u main.py -mode=train -initGlove -modelName=simpleModelGlove_$sty -emb_size=300 -hidden_size=384  -problem=$sty | tee logsmodel/simpleModelGlove_$sty
 #    echo "Finished Training Model for $sty"
 #    echo "----------xxx------------------"
 #done

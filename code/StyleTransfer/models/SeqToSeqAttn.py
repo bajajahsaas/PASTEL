@@ -37,7 +37,7 @@ class SeqToSeqAttn():
             if self.cnfg.initGlove:
                 embed=loadEmbedsAsNumpyObj("./glove/wiki.simple.vec",self.wids_tgt,embed)
             elif self.cnfg.initGlove2:
-                embed=loadEmbedsAsNumpyObj("/home/vgangal/additionalLibs/nlg-eval/nlgeval/data/glove.6B.300d.txt",self.wids_tgt,embed)
+                embed=loadEmbedsAsNumpyObj("../nlg-eval/nlgeval/data/glove.6B.300d.txt",self.wids_tgt,embed)
             self.decoder.embeddings.weight.data.copy_(torch.from_numpy(embed))
         
         if self.cnfg.initGloveEncode or self.cnfg.initGloveEncode2:
@@ -45,7 +45,7 @@ class SeqToSeqAttn():
             if self.cnfg.initGloveEncode:
                 embed=loadEmbedsAsNumpyObj("./glove/wiki.simple.vec",self.wids_src,embed)
             elif self.cnfg.initGloveEncode2:
-                embed=loadEmbedsAsNumpyObj("/home/vgangal/additionalLibs/nlg-eval/nlgeval/data/glove.6B.300d.txt",self.wids_src,embed)
+                embed=loadEmbedsAsNumpyObj("../nlg-eval/nlgeval/data/glove.6B.300d.txt",self.wids_src,embed)
        
             self.encoder.embeddings.weight.data.copy_(torch.from_numpy(embed))
 
