@@ -102,7 +102,7 @@ def parseArguments():
     # Flags specific to solver_general
     parser.add_argument('-typ', dest="typ", default="two_tuple", help="input format")
     parser.add_argument('-useLM', action='store_true', dest='useLM', default=False)
-    parser.add_argument('-pointer', action='store_true', dest='useLM', default=False)
+    parser.add_argument('-pointer', action='store_true', dest='pointer', default=False)
 
     # TGT_LEN_LIMIT=1000
 

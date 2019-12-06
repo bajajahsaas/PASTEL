@@ -62,6 +62,9 @@ class SeqToSeqAttn():
         else:
             self.W = LinearLayer(self.cnfg.hidden_size, self.cnfg.tgtVocabSize)
 
+        if self.cnfg.pointer:  # pointer only possible when encoder side attention is true
+            self.ptr = nn.Linear(2 * self.cnfg.hidden_size, 1)
+
         if self.cnfg.embeddingFreeze:  # False
             # self.encoder.embeddings.weight.requires_grad=False
             # self.revcoder.embeddings.weight.requires_grad=False
@@ -512,10 +515,10 @@ class SeqToSeqAttn():
             return " ".join([self.reverse_wids_tgt[x] for x in tgts]), [atts, srcBatch, tgts]
 
     def forward(self, srcBatch, batch, srcMask, mask, loss_function, inference=False):
-        #  srcBatch: batchsize x sentence_tokens (batchsize is the number of sentences in that batch)
+        #  srcBatch: batchsize x timestamps (batchsize is the number of sentences in that batch)
         srcBatch = srcBatch.T
         srcMask = srcMask.T
-        # sentence_tokens x batchsize
+        # timestamps x batchsize
         # Init encoder. We don't need start here since we don't softmax.
         self.enc_hidden = self.init_hidden(srcBatch)  # 1 x batchsize x hidden_dim
         # print "Src Batch Size:",srcBatch.shape
@@ -531,7 +534,7 @@ class SeqToSeqAttn():
 
         srcEmbedIndexSeq = []
         for rowId, row in enumerate(srcBatch):
-            # get particular timestamps of all the batches together
+            # get particular timestamp of all the batches together
             srcEmbedIndex = self.getIndex(row, inference=inference)
             # srcEmbedIndex is of dimension: batchsize (particular timestep word in all sentences of that batch)
             if self.cnfg.use_reverse:
@@ -577,6 +580,9 @@ class SeqToSeqAttn():
         c_0 = autograd.Variable(zeroInit)
 
         batch = batch.T
+        # timestamps x batchsize
+        batch_size = batch.shape[1]
+
         self.hidden = self.enc_hidden  # last hidden layer of encoder is the first hidden of decoder
 
         if self.cnfg.use_reverse:
@@ -614,7 +620,7 @@ class SeqToSeqAttn():
         tgts = []
         encoderOutTensor = torch.stack([encoderOut for encoderOut in encoderOuts], dim=0)
         for rowId, row in enumerate(batch):
-
+            # iterate over timestamps
             tgtEmbedIndex = self.getIndex(row, inference=inference)
             o_t = decoderOuts[-1]
 
@@ -655,11 +661,33 @@ class SeqToSeqAttn():
             loss = []
             print('decoderOuts', decoderOuts.size())
             for decoderOut, tgt in zip(decoderOuts, tgts):
+                # iterate over time stamps
                 print('decoderOuts', decoderOuts.size())
-                prob_w = self.W(decoderOut)
-                l = F.log_softmax(prob_w, tgt)
-                loss.append(l)
+                logits = self.W(decoderOut)
 
+                if self.cnfg.pointer:
+                    output = torch.zeros(batch_size, ext_vocab_size)  # seq2seq summarizer: utils.py L206
+                    if torch.cuda.is_available():
+                        output = output.cuda()
+
+                    # distribute probabilities between generator and pointer
+                    prob_ptr = F.sigmoid(self.ptr(decoderOut))  # (batch size, 1)
+                    prob_gen = 1 - prob_ptr
+                    # add generator probabilities to output
+                    gen_output = F.softmax(logits, dim=1)  # can't use log_softmax due to adding probabilities
+                    output[:, :self.cnfg.srcVocabSize] = prob_gen * gen_output
+                    # using source side vocab to generate words
+                    # add pointer probabilities to output
+                    ptr_output = enc_attn
+                    output.scatter_add_(1, srcBatch.transpose(0, 1), prob_ptr * ptr_output)
+
+                    l = loss_function(output, tgt)
+
+                else:
+                    prob_w = F.log_softmax(logits)
+                    l = loss_function(prob_w, tgt)
+
+                loss.append(l)
             print('totalLoss', totalLoss, sum(loss))
         else:
             totalLoss = sum(
