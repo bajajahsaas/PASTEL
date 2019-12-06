@@ -518,7 +518,7 @@ class SeqToSeqAttn():
         # sentence_tokens x batchsize
         # Init encoder. We don't need start here since we don't softmax.
         self.enc_hidden = self.init_hidden(srcBatch)  # 1 x batchsize x hidden_dim
-        print "enc_hidden.shape", self.enc_hidden.shape
+        print "enc_hidden.shape", self.enc_hidden.size()
         # print "Src Batch Size:",srcBatch.shape
         # print "Src Mask Size:",srcMask.shape
 
@@ -535,7 +535,7 @@ class SeqToSeqAttn():
             # get particular timestamps of all the batches together
             srcEmbedIndex = self.getIndex(row, inference=inference)
             # srcEmbedIndex is of dimension: batchsize (particular timestep word in all sentences of that batch)
-            print 'srcEmbedIndex', srcEmbedIndex.shape
+            print 'srcEmbedIndex', srcEmbedIndex.size()
             if self.cnfg.use_reverse:
                 srcEmbedIndexSeq.append(srcEmbedIndex)
 

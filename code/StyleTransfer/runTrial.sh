@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=styletrans
-#SBATCH --output=logsmodel/st_%j.txt  # output file
-#SBATCH -e logsmodel/st_%j.err        # File to which STDERR will be written
+#SBATCH --output=logstrial/st_%j.txt  # output file
+#SBATCH -e logstrial/st_%j.err        # File to which STDERR will be written
 #SBATCH --partition=titanx-long # Partition to submit to
 #SBATCH --gres=gpu:3
 #SBATCH --mem=42G
@@ -14,7 +14,7 @@
 #do
 #    echo "----------------------"
 #    echo "Training Model For $sty"
-#    CUDA_VISIBLE_DEVICES=2 python -u main.py -mode=train -initGlove2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=7 | tee logsmodel/${modelName}_$sty
+#    CUDA_VISIBLE_DEVICES=2 python -u main.py -mode=train -initGlove2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=7 | tee logstrial/${modelName}_$sty
 #    echo "Finished Training Model for $sty"
 #    echo "----------xxx------------------"
 #done
