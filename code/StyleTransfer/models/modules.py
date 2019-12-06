@@ -186,7 +186,13 @@ class AttnDecoderRNN(nn.Module):
 
         out,hidden=self.decoder(tgtEmbeds,hidden)
         if not getAtt:
-            return out,hidden,c_t
+            if not self.pointer:
+                return out,hidden,c_t
+            else:
+                if feedContextVector:  # first time step, alpha not calculated
+                    return out, hidden, c_t
+                else:
+                    return out, hidden, c_t, alphas
         else:
             return out,hidden,c_t,alphasNumpy
 

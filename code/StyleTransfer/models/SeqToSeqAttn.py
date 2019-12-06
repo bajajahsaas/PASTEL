@@ -578,6 +578,7 @@ class SeqToSeqAttn():
         if torch.cuda.is_available():
             zeroInit = zeroInit.cuda()
         c_0 = autograd.Variable(zeroInit)
+        a_0 = autograd.Variable(zeroInit)
 
         batch = batch.T
         # timestamps x batchsize
@@ -602,6 +603,9 @@ class SeqToSeqAttn():
         if self.cnfg.use_attention:
             contextVectors = []
             contextVectors.append(c_0)
+            if self.cnfg.pointer:
+                attnweights = []
+                attnweights.append(a_0)
         row = np.array([self.cnfg.start, ] * batch.shape[1])
 
         tgtEmbedIndex = self.getIndex(row, inference=inference)
@@ -625,12 +629,21 @@ class SeqToSeqAttn():
             o_t = decoderOuts[-1]
 
             # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
-            out, self.hidden, c_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t, self.hidden,
+            if not self.cnfg.pointer:
+                out, self.hidden, c_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t, self.hidden,
                                                  feedContextVector=False)
+            else:
+                out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t, self.hidden,
+                                                     feedContextVector=False)
+            # hidden layer passed as argument in next iteration
 
             tgts.append(self.getIndex(row))
             decoderOuts.append(out.squeeze(0))
-            contextVectors.append(c_t)
+
+            if self.cnfg.use_attention:
+                contextVectors.append(c_t)
+                if self.cnfg.pointer:
+                    attnweights.append(a_t)
 
             if self.cnfg.mem_optimize:
                 if self.cnfg.use_attention:
@@ -643,7 +656,7 @@ class SeqToSeqAttn():
         if self.cnfg.use_attention:
             contextVectors = contextVectors[:-1]
 
-        if self.cnfg.use_attention and self.cnfg.use_downstream:
+        if self.cnfg.use_attention and self.cnfg.use_downstream:  # Both True
             decoderOuts = [torch.cat([decoderOut, c_t], 1) for decoderOut, c_t in zip(decoderOuts, contextVectors)]
 
         if self.cnfg.mem_optimize:
@@ -655,17 +668,18 @@ class SeqToSeqAttn():
             gc.collect()
 
         if not self.cnfg.useGumbel:  # False
-            totalLoss = sum(
-                [loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
+            # totalLoss = sum(
+            #     [loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
 
             loss = []
-            print('decoderOuts', len(decoderOuts))
-            for decoderOut, tgt in zip(decoderOuts, tgts):
+            # decoderOuts: timestamps x batch_size
+            for decoderOut, tgt, attnwt in zip(decoderOuts, tgts, attnweights):
                 # iterate over time stamps
-                print('decoderOuts', len(decoderOut))
+                # print('decoderOut', len(decoderOut)): # batch size
                 logits = self.W(decoderOut)
 
                 if self.cnfg.pointer:
+                    # Todo: fix ext_vocab_size
                     output = torch.zeros(batch_size, ext_vocab_size)  # seq2seq summarizer: utils.py L206
                     if torch.cuda.is_available():
                         output = output.cuda()
@@ -678,7 +692,7 @@ class SeqToSeqAttn():
                     output[:, :self.cnfg.srcVocabSize] = prob_gen * gen_output
                     # using source side vocab to generate words
                     # add pointer probabilities to output
-                    ptr_output = enc_attn
+                    ptr_output = attnwt
                     output.scatter_add_(1, srcBatch.transpose(0, 1), prob_ptr * ptr_output)
 
                     l = loss_function(output, tgt)
@@ -688,7 +702,8 @@ class SeqToSeqAttn():
                     l = loss_function(prob_w, tgt)
 
                 loss.append(l)
-            print('totalLoss', totalLoss, sum(loss))
+
+            totalLoss = sum(loss)
         else:
             totalLoss = sum(
                 [loss_function(self.gumbelMax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
