@@ -512,15 +512,15 @@ class SeqToSeqAttn():
             return " ".join([self.reverse_wids_tgt[x] for x in tgts]), [atts, srcBatch, tgts]
 
     def forward(self, srcBatch, batch, srcMask, mask, loss_function, inference=False):
-        #  srcBatch: batchsize x sentences
-        print "Src Batch Size:",srcBatch.shape
-        print "Src Mask Size:",srcMask.shape
+        #  srcBatch: batchsize x sentence_tokens (batchsize is the number of sentences in that batch)
         srcBatch = srcBatch.T
         srcMask = srcMask.T
+        # sentence_tokens x batchsize
         # Init encoder. We don't need start here since we don't softmax.
-        self.enc_hidden = self.init_hidden(srcBatch)
-        print "Src Batch Size:",srcBatch.shape
-        print "Src Mask Size:",srcMask.shape
+        self.enc_hidden = self.init_hidden(srcBatch)  # 1 x batchsize x hidden_dim
+        print "enc_hidden.shape", self.enc_hidden.shape
+        # print "Src Batch Size:",srcBatch.shape
+        # print "Src Mask Size:",srcMask.shape
 
         enc_out = None
         encoderOuts = []
@@ -532,7 +532,10 @@ class SeqToSeqAttn():
 
         srcEmbedIndexSeq = []
         for rowId, row in enumerate(srcBatch):
+            # get particular timestamps of all the batches together
             srcEmbedIndex = self.getIndex(row, inference=inference)
+            # srcEmbedIndex is of dimension: batchsize (particular timestep word in all sentences of that batch)
+            print 'srcEmbedIndex', srcEmbedIndex.shape
             if self.cnfg.use_reverse:
                 srcEmbedIndexSeq.append(srcEmbedIndex)
 
@@ -550,7 +553,7 @@ class SeqToSeqAttn():
         if self.cnfg.use_reverse:
             encoderOuts = [torch.add(x, y) for x, y in zip(encoderOuts, revcoderOuts)]
 
-        if self.cnfg.srcMasking:
+        if self.cnfg.srcMasking: # True
             srcMaskTensor = torch.Tensor(srcMask)
             if torch.cuda.is_available():
                 srcMaskTensor = srcMaskTensor.cuda()
