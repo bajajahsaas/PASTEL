@@ -67,7 +67,8 @@ def parseArguments():
 
     # Flags to turn default False arguments off. Read carefully.
     parser.add_argument('-init_enc', action='store_true', dest='init_enc',
-                        default=False)  # Use the forward encoder state for initializing decoder. If false the backward encoder (a.k.a revcoder) is used.
+                        default=False)  # Use the forward encoder state for initializing decoder.
+    # If false the backward encoder (a.k.a revcoder) is used.
     parser.add_argument('-share_embeddings', action='store_true', dest='share_embeddings',
                         default=False)  # Share encoder and decoder embeddings
     parser.add_argument('-normalizeLoss', action='store_true', dest='normalizeLoss',
@@ -101,6 +102,7 @@ def parseArguments():
     # Flags specific to solver_general
     parser.add_argument('-typ', dest="typ", default="two_tuple", help="input format")
     parser.add_argument('-useLM', action='store_true', dest='useLM', default=False)
+    parser.add_argument('-pointer', action='store_true', dest='useLM', default=False)
 
     # TGT_LEN_LIMIT=1000
 

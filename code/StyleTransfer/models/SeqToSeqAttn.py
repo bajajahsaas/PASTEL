@@ -26,6 +26,7 @@ class SeqToSeqAttn():
         self.cnfg = cnfg
         self.cnfg.srcVocabSize = len(self.wids_src)
         self.cnfg.tgtVocabSize = len(self.wids_tgt)
+        self.pointer = cnfg.pointer
 
         #  emb_size=300, hidden_size=384, use_LSTM = True, share_embeddings = False
         self.encoder = EncoderRNN(self.wids_src, self.cnfg.srcVocabSize, self.cnfg.emb_size, self.cnfg.hidden_size,
@@ -36,7 +37,7 @@ class SeqToSeqAttn():
                                        self.cnfg.use_LSTM, True, reference_embeddings=self.encoder.embeddings)
         # share_embeddings is False, no use of reference_embeddings here. sigmoid is False too
         self.decoder = AttnDecoderRNN(self.wids_tgt, cnfg.tgtVocabSize, cnfg.emb_size, cnfg.hidden_size, cnfg.use_LSTM,
-                                      cnfg.use_attention, cnfg.share_embeddings,
+                                      cnfg.use_attention, cnfg.share_embeddings, cnfg.pointer,
                                       reference_embeddings=self.encoder.embeddings, sigmoid=self.cnfg.sigmoid)
 
         if self.cnfg.initGlove or self.cnfg.initGlove2:
@@ -518,7 +519,6 @@ class SeqToSeqAttn():
         # sentence_tokens x batchsize
         # Init encoder. We don't need start here since we don't softmax.
         self.enc_hidden = self.init_hidden(srcBatch)  # 1 x batchsize x hidden_dim
-        print "enc_hidden.shape", self.enc_hidden.size()
         # print "Src Batch Size:",srcBatch.shape
         # print "Src Mask Size:",srcMask.shape
 
@@ -535,7 +535,6 @@ class SeqToSeqAttn():
             # get particular timestamps of all the batches together
             srcEmbedIndex = self.getIndex(row, inference=inference)
             # srcEmbedIndex is of dimension: batchsize (particular timestep word in all sentences of that batch)
-            print 'srcEmbedIndex', srcEmbedIndex.size()
             if self.cnfg.use_reverse:
                 srcEmbedIndexSeq.append(srcEmbedIndex)
 
@@ -553,10 +552,12 @@ class SeqToSeqAttn():
         if self.cnfg.use_reverse:
             encoderOuts = [torch.add(x, y) for x, y in zip(encoderOuts, revcoderOuts)]
 
-        if self.cnfg.srcMasking: # True
+        if self.cnfg.srcMasking:  # True
             srcMaskTensor = torch.Tensor(srcMask)
             if torch.cuda.is_available():
                 srcMaskTensor = srcMaskTensor.cuda()
+
+            # isn't length of encoderOuts same as length of maskTensor always ?
             srcMaskTensor = torch.chunk(autograd.Variable(srcMaskTensor), len(encoderOuts), 0)
             srcMaskTensor = [x.contiguous().view(-1, 1) for x in srcMaskTensor]
             encoderOuts = [encoderOut * (x.expand(encoderOut.size())) for encoderOut, x in
@@ -577,16 +578,16 @@ class SeqToSeqAttn():
         c_0 = autograd.Variable(zeroInit)
 
         batch = batch.T
-        self.hidden = self.enc_hidden
+        self.hidden = self.enc_hidden  # last hidden layer of encoder is the first hidden of decoder
 
         if self.cnfg.use_reverse:
-            if self.cnfg.init_mixed == False:
+            if self.cnfg.init_mixed == False:  # dont use both forward and reverse
                 if self.cnfg.init_enc:
                     self.hidden = self.enc_hidden
                 else:
                     self.hidden = self.rev_hidden
-            else:
-                if self.cnfg.use_LSTM:
+            else:  # use both forward and reverse encoders to init decoder hidden
+                if self.cnfg.use_LSTM:  #  enc_hidden has 2 units
                     self.hidden = (torch.add(self.enc_hidden[0], self.rev_hidden[0]),
                                    torch.add(self.enc_hidden[1], self.rev_hidden[1]))
                 else:
@@ -648,9 +649,19 @@ class SeqToSeqAttn():
                 del contextVectors
             gc.collect()
 
-        if not self.cnfg.useGumbel:
+        if not self.cnfg.useGumbel:  # False
             totalLoss = sum(
                 [loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
+
+            loss = []
+            print('decoderOuts', decoderOuts.size())
+            for decoderOut, tgt in zip(decoderOuts, tgts):
+                print('decoderOuts', decoderOuts.size())
+                prob_w = self.W(decoderOut)
+                l = F.log_softmax(prob_w, tgt)
+                loss.append(l)
+
+            print('totalLoss', totalLoss, sum(loss))
         else:
             totalLoss = sum(
                 [loss_function(self.gumbelMax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])

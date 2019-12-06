@@ -34,7 +34,9 @@ class EncoderRNN(nn.Module):
         print "encoder rnn: ",self._modules.keys()
 
     def forward(self,batchSize,embedIndex,hidden):
-        embeds=self.embeddings(embedIndex)
+        # embedIndex is of shape batchsize
+        # hidden is of shape (1 x batch_size x hidden_dim)
+        embeds=self.embeddings(embedIndex) # embedIndex has indices of that ts word in all sentences of the batch
         #print hidden[0].data.shape, embeds.data.shape
 	out,hidden=self.encoder(embeds.view(1,batchSize,-1),hidden)
         return out,hidden
@@ -119,7 +121,7 @@ class EncoderRNNModel(nn.Module):
 ################################################################
 
 class AttnDecoderRNN(nn.Module):
-    def __init__(self,wids,vocabSize,emb_size,hidden_size,use_LSTM,use_attention,share_embeddings,reference_embeddings=None,sigmoid=False):
+    def __init__(self,wids,vocabSize,emb_size,hidden_size,use_LSTM,use_attention,share_embeddings,pointer,reference_embeddings=None,sigmoid=False):
         super(AttnDecoderRNN,self).__init__()
         self.vocabSize=vocabSize
         self.emb_size=emb_size
@@ -128,6 +130,7 @@ class AttnDecoderRNN(nn.Module):
         self.use_attention=use_attention
         self.wids=wids
         self.sigmoid=sigmoid
+        self.pointer=pointer
 
         if share_embeddings:
             self.embeddings=reference_embeddings
@@ -139,6 +142,9 @@ class AttnDecoderRNN(nn.Module):
                 self.decoder=nn.LSTM(self.emb_size+self.hidden_size,self.hidden_size)
             else:
                 self.decoder=nn.GRU(self.emb_size+self.hidden_size,self.hidden_size)
+
+            if self.pointer:  # Only possible when encoder side attention is true
+                self.ptr = nn.Linear(2 * self.hidden_size, 1)
         else:
             if self.use_LSTM:
                 self.decoder=nn.LSTM(self.emb_size,self.hidden_size)
