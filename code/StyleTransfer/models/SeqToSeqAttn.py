@@ -659,10 +659,10 @@ class SeqToSeqAttn():
                 [loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
 
             loss = []
-            print('decoderOuts', decoderOuts.size())
+            print('decoderOuts', len(decoderOuts))
             for decoderOut, tgt in zip(decoderOuts, tgts):
                 # iterate over time stamps
-                print('decoderOuts', decoderOuts.size())
+                print('decoderOuts', len(decoderOut))
                 logits = self.W(decoderOut)
 
                 if self.cnfg.pointer:
