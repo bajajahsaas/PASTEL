@@ -512,12 +512,15 @@ class SeqToSeqAttn():
             return " ".join([self.reverse_wids_tgt[x] for x in tgts]), [atts, srcBatch, tgts]
 
     def forward(self, srcBatch, batch, srcMask, mask, loss_function, inference=False):
+        #  srcBatch: batchsize x sentences
+        print "Src Batch Size:",srcBatch.shape
+        print "Src Mask Size:",srcMask.shape
         srcBatch = srcBatch.T
         srcMask = srcMask.T
         # Init encoder. We don't need start here since we don't softmax.
         self.enc_hidden = self.init_hidden(srcBatch)
-        # print "Src Batch Size:",srcBatch.shape
-        # print "Src Mask Size:",srcMask.shape
+        print "Src Batch Size:",srcBatch.shape
+        print "Src Mask Size:",srcMask.shape
 
         enc_out = None
         encoderOuts = []
