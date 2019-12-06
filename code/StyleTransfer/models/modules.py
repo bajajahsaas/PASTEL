@@ -22,7 +22,7 @@ class EncoderRNN(nn.Module):
         self.hidden_size=hidden_size
         self.use_LSTM=use_LSTM
         self.wids=wids
-        if share_embeddings:
+        if share_embeddings:  # False for original and True for reverse encoders
             self.embeddings=reference_embeddings
         else:
             #print "ok touched here"
@@ -134,7 +134,7 @@ class AttnDecoderRNN(nn.Module):
         else:
             self.embeddings=nn.Embedding(self.vocabSize,self.emb_size)
 
-        if self.use_attention:
+        if self.use_attention:  # https://youtu.be/XXtpJxZBa2c?t=3965. Concatenate previous time step's attention output to the predicted word (after softmax) when propagating further in decoder.
             if self.use_LSTM:
                 self.decoder=nn.LSTM(self.emb_size+self.hidden_size,self.hidden_size)
             else:

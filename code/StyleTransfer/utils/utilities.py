@@ -47,6 +47,7 @@ def splitBatchesMulti(data,batch_size=32,padSymbol="PAD",padding=[]):
 '''
 
 def maskSeq(seq,desired_length,pad_symbol,method="pre"):
+    # Tells when token at that position is a valid word or a padding token (to normalize lengths in a batch)
     seq_length=len(seq)
     mask=[1,]*desired_length
     if len(seq)<desired_length:
@@ -60,7 +61,6 @@ def maskSeq(seq,desired_length,pad_symbol,method="pre"):
 
 def padSeq(seq,desired_length,pad_symbol,method="pre",swapNoise=False):
     seq_length=len(seq)
-
     if swapNoise:
         iIndex=random.randint(0,seq_length-1)
         jIndex=(iIndex+1)
@@ -72,11 +72,12 @@ def padSeq(seq,desired_length,pad_symbol,method="pre",swapNoise=False):
         seq[iIndex]=seq[jIndex]
         seq[jIndex]=temp
 
+    # normalizing different lengths of sentences in the batch
     if len(seq)<desired_length:
         if method=="post":
-            seq=seq+[pad_symbol,]*(desired_length-seq_length)
+            seq=seq+[pad_symbol,]*(desired_length-seq_length)  # decoder padding at the end
         else:
-            seq=[pad_symbol,]*(desired_length-seq_length)+seq
+            seq=[pad_symbol,]*(desired_length-seq_length)+seq  # encoder padding at the start (may forget initial layer: padding tokens unimportant)
 
     return seq
 

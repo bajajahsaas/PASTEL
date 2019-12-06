@@ -12,12 +12,12 @@ class Lang():
 
     def initVocab(self,mode):
         fileName=self.dataPath+".".join([mode,self.taskInfo,self.name])
-
+        # data/train.STYLED.src, data/train.STYLED.tgt (33240 sentences)
         self.unk_word="<unk>"
         self.wids["<s>"]=0
         self.wids[self.unk_word]=1
         self.wids["</s>"]=2
-        self.wids["<GARBAGE>"]=3
+        self.wids["<GARBAGE>"]=3  # also the default in main.py argument set
 
         word_frequencies=defaultdict(int)
         for line in open(fileName):
@@ -41,6 +41,8 @@ class Lang():
 
     def read_corpus(self,mode,typ="sequence"): # type {sequence, three_tuple}
         fileName=self.dataPath+".".join([mode,self.taskInfo,self.name])
+        # data/train.STYLED.src, data/train.STYLED.tgt (33240 sentences). Similarly for valid and test
+        # data/pretrain.STYLED.src (Use vocab as made in train.STYLED.src)
         sentences=[]
 
         if typ=="sequence":
@@ -48,7 +50,7 @@ class Lang():
                 words=line.split()
                 #words.insert(0,"<s>")
                 words.append("</s>")
-                sentence=[self.wids[word] if word in self.wids else 1 for word in words]
+                sentence=[self.wids[word] if word in self.wids else 1 for word in words]  # UNK_token (can come if freq<= min_freq)
                 sentences.append(sentence)
             return sentences
 

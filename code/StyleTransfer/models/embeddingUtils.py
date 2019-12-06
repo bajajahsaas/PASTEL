@@ -1,5 +1,6 @@
 import numpy as np
 
+# Todo: Add Bert Embeddings
 
 def loadEmbedsAsNumpyObj(path,wids,embeddingMatrix):
 
