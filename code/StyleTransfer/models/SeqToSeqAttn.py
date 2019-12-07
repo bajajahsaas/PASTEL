@@ -679,8 +679,8 @@ class SeqToSeqAttn():
                 logits = self.W(decoderOut)
 
                 if self.cnfg.pointer:
-                    # Todo: fix ext_vocab_size
-                    output = torch.zeros(batch_size, ext_vocab_size)  # seq2seq summarizer: utils.py L206
+                    # Todo: fix ext_vocab_size: seq2seq summarizer: utils.py L206
+                    output = torch.zeros(batch_size, self.cnfg.srcVocabSize)
                     if torch.cuda.is_available():
                         output = output.cuda()
 
