@@ -689,7 +689,9 @@ class SeqToSeqAttn():
                 srcBatch_tensor = srcBatch_tensor.cuda()
             # dim: seqlen x batch_size
 
-            ts = 0
+            totalLossEr = sum([loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
+            print('totalLossEr', type(totalLossEr))
+
             # decoderOuts: timestamps x batch_size
             for decoderOut, tgt, attnwt in zip(decoderOuts, tgts, attnweights):
                 # iterate over time stamps
@@ -723,6 +725,7 @@ class SeqToSeqAttn():
                 loss.append(l)
 
             totalLoss = sum(loss)
+            print('totalLoss', type(totalLoss))
         else:
             totalLoss = sum(
                 [loss_function(self.gumbelMax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
