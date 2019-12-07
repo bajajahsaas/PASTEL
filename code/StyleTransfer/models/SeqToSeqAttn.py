@@ -624,7 +624,7 @@ class SeqToSeqAttn():
         tgts = []
         encoderOutTensor = torch.stack([encoderOut for encoderOut in encoderOuts], dim=0)
         for rowId, row in enumerate(batch):
-            # iterate over timestamps
+            # iterate over timestamps of target side
             tgtEmbedIndex = self.getIndex(row, inference=inference)
             o_t = decoderOuts[-1]
 
@@ -674,12 +674,17 @@ class SeqToSeqAttn():
             #     [loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
 
             loss = []
+            srcBatch_tensor = torch.from_numpy(srcBatch)
+            if torch.cuda.is_available():
+                srcBatch_tensor = srcBatch_tensor.cuda()
+            # dim: seqlen x batch_size
+
+            ts = 0
             # decoderOuts: timestamps x batch_size
             for decoderOut, tgt, attnwt in zip(decoderOuts, tgts, attnweights):
                 # iterate over time stamps
                 # print('decoderOut', len(decoderOut)): # batch size
                 logits = self.W(decoderOut)
-
                 if self.cnfg.pointer:
                     # Todo: fix ext_vocab_size: seq2seq summarizer: utils.py L206
                     output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
@@ -696,9 +701,10 @@ class SeqToSeqAttn():
                     # using source side vocab to generate words
                     # add pointer probabilities to output
                     ptr_output = attnwt
-                    srcBatch_tensor = torch.from_numpy(srcBatch)
-                    if torch.cuda.is_available():
-                        srcBatch_tensor = srcBatch_tensor.cuda()
+                    print('srcBatch_tensor', srcBatch_tensor.size())
+                    print('srcBatch_tensor after transpose', srcBatch_tensor.transpose(0, 1).size())
+                    print('ptr product', (prob_ptr * ptr_output).size())
+                    print('ptr attnwt', attnwt.size())
                     output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
 
                     l = loss_function(output, tgt)
