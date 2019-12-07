@@ -106,9 +106,9 @@ class SeqToSeqAttn():
     def save_checkpoint(self, modelName, optimizer):
         if not self.cnfg.pointer:
             checkpoint = {'encoder_state_dict': self.encoder.state_dict(),
-                      'revcoder_state_dict': self.revcoder.state_dict(),
-                      'decoder_state_dict': self.decoder.state_dict(), 'lin_dict': self.W.state_dict(),
-                      'optimizer': optimizer.state_dict()}
+                          'revcoder_state_dict': self.revcoder.state_dict(),
+                          'decoder_state_dict': self.decoder.state_dict(), 'lin_dict': self.W.state_dict(),
+                          'optimizer': optimizer.state_dict()}
         else:
             checkpoint = {'encoder_state_dict': self.encoder.state_dict(),
                           'revcoder_state_dict': self.revcoder.state_dict(),
@@ -244,7 +244,7 @@ class SeqToSeqAttn():
         # srcBatch : batch_size x seqlen
         batch_size = srcBatch.shape[0]
         srcSentenceLength = srcBatch.shape[1]
-        srcBatch = srcBatch.T # seqlen x batchsize
+        srcBatch = srcBatch.T  # seqlen x batchsize
         self.enc_hidden = self.init_hidden(srcBatch)
         enc_out = None
         encoderOuts = []
@@ -348,11 +348,13 @@ class SeqToSeqAttn():
                 # print beam[0][1].size()
                 # print encOutTensor.size()
                 if not self.cnfg.pointer:
-                    out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, beam[0],
-                                                   feedContextVector=False, inference=True)
+                    out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t,
+                                                       beam[0],
+                                                       feedContextVector=False, inference=True)
                 else:
-                    out, newHidden, c_t, a_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, beam[0],
-                                                   feedContextVector=False, inference=True)
+                    out, newHidden, c_t, a_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t,
+                                                            beam[0],
+                                                            feedContextVector=False, inference=True)
                 del o_t
 
                 out = out.view(1, -1)
@@ -639,7 +641,7 @@ class SeqToSeqAttn():
                 else:
                     self.hidden = self.rev_hidden
             else:  # use both forward and reverse encoders to init decoder hidden
-                if self.cnfg.use_LSTM:  #  enc_hidden has 2 units
+                if self.cnfg.use_LSTM:  # enc_hidden has 2 units
                     self.hidden = (torch.add(self.enc_hidden[0], self.rev_hidden[0]),
                                    torch.add(self.enc_hidden[1], self.rev_hidden[1]))
                 else:
@@ -686,10 +688,11 @@ class SeqToSeqAttn():
             # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
             if not self.cnfg.pointer:
                 out, self.hidden, c_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t, self.hidden,
-                                                 feedContextVector=False)
-            else:
-                out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t, self.hidden,
                                                      feedContextVector=False)
+            else:
+                out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t,
+                                                          self.hidden,
+                                                          feedContextVector=False)
             # hidden layer passed as argument in next iteration
 
             tgts.append(self.getIndex(row))
@@ -729,7 +732,8 @@ class SeqToSeqAttn():
             #     [loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
 
             if not self.cnfg.pointer:
-                totalLoss= sum([loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
+                totalLoss = sum([loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in
+                                 zip(decoderOuts, tgts)])
             else:
                 loss = []
                 srcBatch_tensor = torch.from_numpy(srcBatch)
@@ -737,10 +741,18 @@ class SeqToSeqAttn():
                     srcBatch_tensor = srcBatch_tensor.cuda()
                 # dim: seqlen x batch_size
 
+                ts = 0
                 # decoderOuts: timestamps x batch_size
                 for decoderOut, tgt, attnwt in zip(decoderOuts, tgts, attnweights):
                     # iterate over time stamps
                     # print('decoderOut', len(decoderOut)): # batch size
+
+                    if ts == 0:  # don't use a_0 which is a part of attnweights
+                        l = loss_function(F.log_softmax(self.W(decoderOut)), tgt)
+                        loss.append(l)
+                        ts += 1
+                        continue
+
                     logits = self.W(decoderOut)
                     # Todo: how to separately handle first attention a_0 in training and testing?
                     # Todo: fix ext_vocab_size: seq2seq summarizer: utils.py L206
