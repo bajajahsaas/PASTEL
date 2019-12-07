@@ -271,7 +271,7 @@ class SeqToSeqAttn():
         
         tgtEmbedIndex=self.getIndex(row,inference=True)
         
-        out,self.hidden,c_0=self.decoder(1,tgtEmbedIndex,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
+        out,self.hidden,c_0=self.decoder(1,tgtEmbedIndex,None,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
         #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
         
         out=out.view(1,-1)
@@ -312,10 +312,9 @@ class SeqToSeqAttn():
                 #print beam[0][0].size()
                 #print beam[0][1].size()
                 #print encOutTensor.size()
-                out,newHidden,c_t=self.decoder(1,tgtEmbedIndex,torch.transpose(encOutTensor,0,1),o_t,beam[0],feedContextVector=False,inference=True)
+                out,newHidden,c_t=self.decoder(1,tgtEmbedIndex,None,torch.transpose(encOutTensor,0,1),o_t,beam[0],feedContextVector=False,inference=True)
 
                 del o_t
-
                 out=out.view(1,-1)
                 if self.cnfg.use_attention:
                     scores=F.log_softmax(self.W(torch.cat([out,c_t],1)))
@@ -441,9 +440,10 @@ class SeqToSeqAttn():
         
         tgtEmbedIndex=self.getIndex(row,inference=True)
         
-        out,self.hidden,c_0=self.decoder(1,tgtEmbedIndex,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
+        out,self.hidden,c_0=self.decoder(1,tgtEmbedIndex,None,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
         #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
-        
+        start=torch.zeros([1,1,384])
+        prevouts=[start,out,]
         out=out.view(1,-1)
         if self.cnfg.use_attention:
             scores=self.W(torch.cat([out,c_0],1))
@@ -460,18 +460,18 @@ class SeqToSeqAttn():
             del self.enc_hidden
             if self.cnfg.use_reverse:
                 del self.rev_hidden
-
+             
         encOutTensor=torch.cat([encoderOut.view(1,1,self.cnfg.hidden_size) for encoderOut in encoderOuts],1)
         while argmaxValue!=self.cnfg.stop and len(tgts)<2*srcSentenceLength+10: #self.cnfg.TGT_LEN_LIMIT:
             row=np.array([argmaxValue,]*1)
             tgtEmbedIndex=self.getIndex(row,inference=True)
             o_t=out
-            
+            x=torch.cat(prevouts[:len(prevouts)-1])
             if not getAtt:
-                out,self.hidden,c_t=self.decoder(1,tgtEmbedIndex,torch.transpose(encOutTensor,0,1),o_t,self.hidden,feedContextVector=False,inference=True)
+                out,self.hidden,c_t=self.decoder(1,tgtEmbedIndex,x,torch.transpose(encOutTensor,0,1),o_t,self.hidden,feedContextVector=False,inference=True,decod_attn=True)
             else:
-                out,self.hidden,c_t,att=self.decoder(1,tgtEmbedIndex,torch.transpose(encOutTensor,0,1),o_t,self.hidden,feedContextVector=False,inference=True,getAtt=True)
-
+                out,self.hidden,c_t,att=self.decoder(1,tgtEmbedIndex,x,torch.transpose(encOutTensor,0,1),o_t,self.hidden,feedContextVector=False,inference=True,getAtt=True,decod_attn=True)
+            prevouts.append(out)
             del o_t
 
             out=out.view(1,-1)
@@ -578,29 +578,34 @@ class SeqToSeqAttn():
         row=np.array([self.cnfg.start,]*batch.shape[1])
         
         tgtEmbedIndex=self.getIndex(row,inference=inference)
+        
         #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
-        out,self.hidden,c_0=self.decoder(batch.shape[1],tgtEmbedIndex,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
-                
+        out,self.hidden,c_0=self.decoder(batch.shape[1],tgtEmbedIndex,None,None,None,self.hidden,feedContextVector=True,contextVector=c_0,decod_attn=False)
+     
+
         if self.cnfg.mem_optimize:
             if not self.cnfg.context_dropout:
                 del c_0
             del self.enc_hidden
             if self.cnfg.use_reverse:
                 del self.rev_hidden
-       
         decoderOuts=[out.squeeze(0),]
+        start=torch.zeros([1,32,384])
+        prevouts=[start,out,]
         tgts=[]
         encoderOutTensor=torch.stack([encoderOut for encoderOut in encoderOuts],dim=0)
         for rowId,row in enumerate(batch):
-            
             tgtEmbedIndex=self.getIndex(row,inference=inference)
             o_t=decoderOuts[-1]
-
+            x=torch.cat(prevouts[:len(prevouts)-1])
             #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
-            out,self.hidden,c_t=self.decoder(batch.shape[1],tgtEmbedIndex,encoderOutTensor,o_t,self.hidden,feedContextVector=False)
-
+            out,self.hidden,c_t=self.decoder(batch.shape[1],tgtEmbedIndex,x,encoderOutTensor,o_t,self.hidden,feedContextVector=False,decod_attn=True)
             tgts.append(self.getIndex(row))
             decoderOuts.append(out.squeeze(0))
+            prevouts.append(out)
+            
+
+            
             contextVectors.append(c_t) 
 
             if self.cnfg.mem_optimize:
@@ -642,4 +647,3 @@ class SeqToSeqAttn():
         x=(scores+noise)/tau+temperature
         x=F.log_softmax(x.view(scores.size(0),-1))
         return x.view_as(scores)
-
