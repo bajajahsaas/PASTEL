@@ -137,6 +137,8 @@ class SeqToSeqAttn():
 
     def decodeAll(self, srcBatches, modelName, method="greedy", evalMethod="BLEU", suffix="test", lmObj=None,
                   testIndex=None, loss_function=None, optimizer=None, getAtt=False):
+        # est_src_batches, modelName, method="BEAM", evalMethod="BLEU", suffix="test",
+        #                             lmObj=None, getAtt=False
         tgtStrings = []
         tgtTimes = []
         if getAtt:
@@ -712,8 +714,9 @@ class SeqToSeqAttn():
                     # using source side vocab to generate words
                     # add pointer probabilities to output
                     ptr_output = attnwt
-                    # src_seqlen x batchsize
+                    # batchsize x seq_len
                     output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
+                    output = torch.log(output + 1e-31)
                     l = loss_function(output, tgt)
                     loss.append(l)
 
