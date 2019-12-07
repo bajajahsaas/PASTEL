@@ -133,6 +133,7 @@ class AttnDecoderRNN(nn.Module):
             self.embeddings=reference_embeddings
         else:
             self.embeddings=nn.Embedding(self.vocabSize,self.emb_size)
+        self.lin = nn.Linear(self.hidden_size * 2, self.hidden_size)
 
         if self.use_attention:
             if self.use_LSTM:
@@ -144,8 +145,7 @@ class AttnDecoderRNN(nn.Module):
                 self.decoder=nn.LSTM(self.emb_size,self.hidden_size)
             else:
                 self.decoder=nn.GRU(self.emb_size,self.hidden_size)
-
-    def forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None,inference=False,getAtt=False):
+    def forward(self,batchSize,tgtEmbedIndex,x,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None,inference=False,getAtt=False,decod_attn=False):
 
         if self.use_attention:
             if not feedContextVector:
@@ -164,13 +164,21 @@ class AttnDecoderRNN(nn.Module):
                         firstAlphas=torch.transpose(F.sigmoid(dotProduct),0,1).unsqueeze(2)
                     alphas=firstAlphas.expand(encoderOutTensor.size())
                     alphasNumpy=firstAlphas.data.cpu().numpy()
-                del o_t
                 c_t=torch.squeeze(torch.sum(alphas*encoderOutTensor,0),0)
             else:
                 c_t=contextVector
-
-
+        if decod_attn: 
+            o_t_exp=o_t.expand(x.size())
+            dotProduct1=torch.transpose(torch.sum(torch.mul(x,o_t_exp),2),0,1)
+            alphas1=torch.transpose(F.softmax(dotProduct1),0,1).unsqueeze(2).expand(x.size())
+            c_t1=torch.squeeze(torch.sum(alphas1*x,0),0)
+        
         tgtEmbeds=self.embeddings(tgtEmbedIndex)
+         
+        if decod_attn:
+            c=torch.cat([c_t1,c_t],1)
+            c_t=self.lin(c)
+
         if inference:
             c_t=c_t.view(1,-1)
         if self.use_attention:
@@ -179,6 +187,7 @@ class AttnDecoderRNN(nn.Module):
             tgtEmbeds=tgtEmbeds.view(1,batchSize,-1)
 
         out,hidden=self.decoder(tgtEmbeds,hidden)
+    
         if not getAtt:
             return out,hidden,c_t
         else:
