@@ -602,7 +602,7 @@ class SeqToSeqAttn():
         encoder_seqlen = len(srcBatch)
         batch_size_src = len(srcBatch[0])
 
-        a_0 = autograd.Variable(torch.zeros((encoder_seqlen, batch_size_src)))
+        a_0 = autograd.Variable(torch.zeros((batch_size_src, encoder_seqlen)))
         print('a_0',a_0.size())
         # Init with START token
         if self.cnfg.use_attention:
@@ -710,10 +710,10 @@ class SeqToSeqAttn():
                     ptr_output = attnwt
                     print('srcBatch_tensor', srcBatch_tensor.size())
                     print('srcBatch_tensor after transpose', srcBatch_tensor.transpose(0, 1).size())
-                    print('ptr product', (prob_ptr * ptr_output).size())
                     print('ptr attnwt', attnwt.size())
+                    print('ptr product', (prob_ptr * ptr_output).size())
                     # src_seqlen x batchsize
-                    output.scatter_add_(1, srcBatch_tensor, prob_ptr * ptr_output)
+                    output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
 
                     l = loss_function(output, tgt)
 

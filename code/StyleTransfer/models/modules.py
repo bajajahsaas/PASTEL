@@ -157,7 +157,6 @@ class AttnDecoderRNN(nn.Module):
             if not feedContextVector:
                 o_t_expanded=o_t.expand(encoderOutTensor.size())
                 dotProduct=torch.transpose(torch.sum(torch.mul(encoderOutTensor,o_t_expanded),2),0,1)
-                print('dotprod', dotProduct.size())
                 del o_t_expanded
                 if not getAtt:
                     if not self.sigmoid:
@@ -197,7 +196,6 @@ class AttnDecoderRNN(nn.Module):
                 if feedContextVector:  # first time step, alpha not calculated
                     return out, hidden, c_t
                 else:
-                    print ('attn_dist', attn_dist.size())
                     return out, hidden, c_t, attn_dist
         else:
             return out,hidden,c_t,alphasNumpy
