@@ -593,7 +593,7 @@ class SeqToSeqAttn():
             if self.cnfg.use_reverse:
                 del self.rev_hidden
         decoderOuts=[out.squeeze(0),]
-        start=torch.zeros([1,32,384])
+        start=torch.zeros([1,batch.shape[1],384])
         if torch.cuda.is_available():
             start = start.cuda()
         prevouts=[start,out,]
