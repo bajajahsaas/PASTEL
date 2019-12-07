@@ -683,21 +683,20 @@ class SeqToSeqAttn():
             # totalLoss = sum(
             #     [loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
 
-            loss = []
-            srcBatch_tensor = torch.from_numpy(srcBatch)
-            if torch.cuda.is_available():
-                srcBatch_tensor = srcBatch_tensor.cuda()
-            # dim: seqlen x batch_size
+            if not self.cnfg.pointer:
+                totalLoss= sum([loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
+            else:
+                loss = []
+                srcBatch_tensor = torch.from_numpy(srcBatch)
+                if torch.cuda.is_available():
+                    srcBatch_tensor = srcBatch_tensor.cuda()
+                # dim: seqlen x batch_size
 
-            totalLossEr = sum([loss_function(F.log_softmax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
-            print('totalLossEr', type(totalLossEr))
-
-            # decoderOuts: timestamps x batch_size
-            for decoderOut, tgt, attnwt in zip(decoderOuts, tgts, attnweights):
-                # iterate over time stamps
-                # print('decoderOut', len(decoderOut)): # batch size
-                logits = self.W(decoderOut)
-                if self.cnfg.pointer:
+                # decoderOuts: timestamps x batch_size
+                for decoderOut, tgt, attnwt in zip(decoderOuts, tgts, attnweights):
+                    # iterate over time stamps
+                    # print('decoderOut', len(decoderOut)): # batch size
+                    logits = self.W(decoderOut)
                     # Todo: fix ext_vocab_size: seq2seq summarizer: utils.py L206
                     output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
                     if torch.cuda.is_available():
@@ -715,17 +714,10 @@ class SeqToSeqAttn():
                     ptr_output = attnwt
                     # src_seqlen x batchsize
                     output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
-
                     l = loss_function(output, tgt)
+                    loss.append(l)
 
-                else:
-                    prob_w = F.log_softmax(logits)
-                    l = loss_function(prob_w, tgt)
-
-                loss.append(l)
-
-            totalLoss = sum(loss)
-            print('totalLoss', type(totalLoss))
+                totalLoss = sum(loss)
         else:
             totalLoss = sum(
                 [loss_function(self.gumbelMax(self.W(decoderOut)), tgt) for decoderOut, tgt in zip(decoderOuts, tgts)])
