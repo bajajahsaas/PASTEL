@@ -602,7 +602,11 @@ class SeqToSeqAttn():
         encoder_seqlen = len(srcBatch)
         batch_size_src = len(srcBatch[0])
 
-        a_0 = autograd.Variable(torch.zeros((batch_size_src, encoder_seqlen)))
+        zeroInit_1 = torch.zeros((batch_size_src, encoder_seqlen))
+        if torch.cuda.is_available():
+            zeroInit_1 = zeroInit_1.cuda()
+        a_0 = autograd.Variable(zeroInit_1)
+
         print('a_0',a_0.size())
         # Init with START token
         if self.cnfg.use_attention:
