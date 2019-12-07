@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=styletrans
+#SBATCH --job-name=styleattn
 #SBATCH --output=logsinfer/st_%j.txt  # output file
 #SBATCH -e logsinfer/st_%j.err        # File to which STDERR will be written
 #SBATCH --partition=titanx-long # Partition to submit to
@@ -26,7 +26,7 @@ testName=test
 #    echo "Done for $sty"
 #done
 
-modelName=simpleModelGlove2BothPretrained
+modelName=simpleModelGlove2BothPretrainedDec_Attn
 
 for sty in STYLED #Politics ethnic gender Country edu TOD
 do
