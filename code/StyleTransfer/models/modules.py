@@ -133,7 +133,7 @@ class AttnDecoderRNN(nn.Module):
             self.embeddings=reference_embeddings
         else:
             self.embeddings=nn.Embedding(self.vocabSize,self.emb_size)
-        self.lin = nn.Linear(self.hidden_size * 2, self.hidden_size)
+        self.lin = LinearLayer(self.hidden_size * 2, self.hidden_size)
 
         if self.use_attention:
             if self.use_LSTM:
@@ -145,6 +145,7 @@ class AttnDecoderRNN(nn.Module):
                 self.decoder=nn.LSTM(self.emb_size,self.hidden_size)
             else:
                 self.decoder=nn.GRU(self.emb_size,self.hidden_size)
+
     def forward(self,batchSize,tgtEmbedIndex,x,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None,inference=False,getAtt=False,decod_attn=False):
 
         if self.use_attention:
