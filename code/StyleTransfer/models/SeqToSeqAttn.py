@@ -608,7 +608,6 @@ class SeqToSeqAttn():
             zeroInit_1 = zeroInit_1.cuda()
         a_0 = autograd.Variable(zeroInit_1)
 
-        print('a_0',a_0.size())
         # Init with START token
         if self.cnfg.use_attention:
             contextVectors = []
