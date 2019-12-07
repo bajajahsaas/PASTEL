@@ -19,7 +19,7 @@
 #    echo "----------xxx------------------"
 #done
 
-modelName=simpleModelGlove2BothPretrainedPointer4_6
+modelName=simpleModelGlove2BothPretrainedPointer20_20
 
 for sty in STYLED #ethnic gender Country edu TOD #Politics
 do
