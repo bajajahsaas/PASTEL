@@ -142,9 +142,6 @@ class AttnDecoderRNN(nn.Module):
                 self.decoder=nn.LSTM(self.emb_size+self.hidden_size,self.hidden_size)
             else:
                 self.decoder=nn.GRU(self.emb_size+self.hidden_size,self.hidden_size)
-
-            if self.pointer:  # Only possible when encoder side attention is true
-                self.ptr = nn.Linear(2 * self.hidden_size, 1)
         else:
             if self.use_LSTM:
                 self.decoder=nn.LSTM(self.emb_size,self.hidden_size)

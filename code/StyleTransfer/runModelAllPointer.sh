@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=styletrans
+#SBATCH --job-name=styleptr
 #SBATCH --output=logsmodel/st_%j.txt  # output file
 #SBATCH -e logsmodel/st_%j.err        # File to which STDERR will be written
 #SBATCH --partition=m40-long # Partition to submit to
@@ -19,7 +19,7 @@
 #    echo "----------xxx------------------"
 #done
 
-modelName=simpleModelGlove2BothPretrainedPointer10_20
+modelName=simpleModelGlove2BothPretrainedPointer4_10
 
 for sty in STYLED #ethnic gender Country edu TOD #Politics
 do
