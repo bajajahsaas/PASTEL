@@ -691,7 +691,7 @@ class SeqToSeqAttn():
                     prob_gen = 1 - prob_ptr
                     # add generator probabilities to output
                     gen_output = F.softmax(logits, dim=1)  # can't use log_softmax due to adding probabilities
-                    output[:, :self.cnfg.srcVocabSize] = prob_gen * gen_output
+                    output[:, :self.cnfg.tgtVocabSize] = prob_gen * gen_output
                     # using source side vocab to generate words
                     # add pointer probabilities to output
                     ptr_output = attnwt
