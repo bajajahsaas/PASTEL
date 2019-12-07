@@ -81,7 +81,8 @@ class SeqToSeqAttn():
         self.revcoder.cuda()
         self.decoder.cuda()
         self.W.cuda()
-        self.ptr.cuda()
+        if self.cnfg.pointer:
+            self.ptr.cuda()
 
     def getIndex(self, row, inference=False):
         tensor = torch.LongTensor(row)
