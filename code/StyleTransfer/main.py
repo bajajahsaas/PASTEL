@@ -139,6 +139,6 @@ else:
         params.lmObj = lmObj
         print "Done Loading LM"
     import solver
-
+    print('Pointer method is : ', params.pointer)
     seq2seq = solver.Solver(params)
     seq2seq.main()
