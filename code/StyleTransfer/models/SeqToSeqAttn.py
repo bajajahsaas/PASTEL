@@ -572,7 +572,6 @@ class SeqToSeqAttn():
                 del revcoderOuts
                 del rev_out
             del srcEmbedIndexSeq
-            del srcBatch
             del enc_out
 
         zeroInit = torch.zeros(encoderOuts[-1].size())
@@ -649,6 +648,8 @@ class SeqToSeqAttn():
             if self.cnfg.mem_optimize:
                 if self.cnfg.use_attention:
                     del c_t
+                    if self.cnfg.pointer:
+                        del a_t
 
         if self.cnfg.mem_optimize:
             del encoderOutTensor
