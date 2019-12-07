@@ -104,11 +104,17 @@ class SeqToSeqAttn():
             return autograd.Variable(hiddenElem1)
 
     def save_checkpoint(self, modelName, optimizer):
-        checkpoint = {'encoder_state_dict': self.encoder.state_dict(),
+        if not self.cnfg.pointer:
+            checkpoint = {'encoder_state_dict': self.encoder.state_dict(),
                       'revcoder_state_dict': self.revcoder.state_dict(),
                       'decoder_state_dict': self.decoder.state_dict(), 'lin_dict': self.W.state_dict(),
                       'optimizer': optimizer.state_dict()}
-
+        else:
+            checkpoint = {'encoder_state_dict': self.encoder.state_dict(),
+                          'revcoder_state_dict': self.revcoder.state_dict(),
+                          'decoder_state_dict': self.decoder.state_dict(), 'lin_dict': self.W.state_dict(),
+                          'ptr_dict': self.ptr.state_dict(),
+                          'optimizer': optimizer.state_dict()}
         torch.save(checkpoint, self.cnfg.model_dir + modelName + ".ckpt")
         print "Saved Model"
         return
@@ -129,6 +135,9 @@ class SeqToSeqAttn():
         self.revcoder.load_state_dict(checkpoint['revcoder_state_dict'])
         self.decoder.load_state_dict(checkpoint['decoder_state_dict'])
         self.W.load_state_dict(checkpoint['lin_dict'])
+
+        if self.cnfg.pointer:
+            self.ptr.load_state_dict(checkpoint['ptr_dict'])
 
         if optimizer != None:
             optimizer.load_state_dict(checkpoint['optimizer'])
