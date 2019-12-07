@@ -63,7 +63,7 @@ class SeqToSeqAttn():
             self.W = LinearLayer(self.cnfg.hidden_size, self.cnfg.tgtVocabSize)
 
         if self.cnfg.pointer:  # pointer only possible when encoder side attention is true
-            self.ptr = nn.Linear(2 * self.cnfg.hidden_size, 1)
+            self.ptr = LinearLayer(2 * self.cnfg.hidden_size, 1)
 
         if self.cnfg.embeddingFreeze:  # False
             # self.encoder.embeddings.weight.requires_grad=False
@@ -685,7 +685,8 @@ class SeqToSeqAttn():
                         output = output.cuda()
 
                     # distribute probabilities between generator and pointer
-                    prob_ptr = F.sigmoid(self.ptr(decoderOut))  # (batch size, 1)
+                    prob_ptr_logits = self.ptr(decoderOut)
+                    prob_ptr = F.sigmoid(prob_ptr_logits)  # (batch size, 1)
                     prob_gen = 1 - prob_ptr
                     # add generator probabilities to output
                     gen_output = F.softmax(logits, dim=1)  # can't use log_softmax due to adding probabilities
