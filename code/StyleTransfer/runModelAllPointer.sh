@@ -2,7 +2,7 @@
 #SBATCH --job-name=styletrans
 #SBATCH --output=logsmodel/st_%j.txt  # output file
 #SBATCH -e logsmodel/st_%j.err        # File to which STDERR will be written
-#SBATCH --partition=titanx-long # Partition to submit to
+#SBATCH --partition=m40-long # Partition to submit to
 #SBATCH --gres=gpu:3
 #SBATCH --mem=42G
 #
