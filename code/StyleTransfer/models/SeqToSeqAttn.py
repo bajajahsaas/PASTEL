@@ -612,9 +612,9 @@ class SeqToSeqAttn():
         # Init with START token
         if self.cnfg.use_attention:
             contextVectors = []
+            attnweights = []
             contextVectors.append(c_0)
             if self.cnfg.pointer:
-                attnweights = []
                 attnweights.append(a_0)
 
         row = np.array([self.cnfg.start, ] * batch.shape[1])
@@ -634,7 +634,6 @@ class SeqToSeqAttn():
         decoderOuts = [out.squeeze(0), ]
         tgts = []
         encoderOutTensor = torch.stack([encoderOut for encoderOut in encoderOuts], dim=0)
-        print('encoderOutTensor', encoderOutTensor.size())
         for rowId, row in enumerate(batch):
             # iterate over timestamps of target side
             tgtEmbedIndex = self.getIndex(row, inference=inference)
@@ -713,10 +712,6 @@ class SeqToSeqAttn():
                     # using source side vocab to generate words
                     # add pointer probabilities to output
                     ptr_output = attnwt
-                    print('srcBatch_tensor', srcBatch_tensor.size())
-                    print('srcBatch_tensor after transpose', srcBatch_tensor.transpose(0, 1).size())
-                    print('ptr attnwt', attnwt.size())
-                    print('ptr product', (prob_ptr * ptr_output).size())
                     # src_seqlen x batchsize
                     output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
 
