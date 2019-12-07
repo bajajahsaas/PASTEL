@@ -696,7 +696,10 @@ class SeqToSeqAttn():
                     # using source side vocab to generate words
                     # add pointer probabilities to output
                     ptr_output = attnwt
-                    output.scatter_add_(1, srcBatch.transpose(0, 1), prob_ptr * ptr_output)
+                    srcBatch_tensor = torch.from_numpy(srcBatch.values)
+                    if torch.cuda.is_available():
+                        srcBatch_tensor = srcBatch_tensor.cuda()
+                    output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
 
                     l = loss_function(output, tgt)
 
