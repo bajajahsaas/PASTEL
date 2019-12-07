@@ -443,6 +443,9 @@ class SeqToSeqAttn():
         out,self.hidden,c_0=self.decoder(1,tgtEmbedIndex,None,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
         #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
         start=torch.zeros([1,1,384])
+        if torch.cuda.is_available():
+            start=start.cuda()
+
         prevouts=[start,out,]
         out=out.view(1,-1)
         if self.cnfg.use_attention:
@@ -591,6 +594,8 @@ class SeqToSeqAttn():
                 del self.rev_hidden
         decoderOuts=[out.squeeze(0),]
         start=torch.zeros([1,32,384])
+        if torch.cuda.is_available():
+            start = start.cuda()
         prevouts=[start,out,]
         tgts=[]
         encoderOutTensor=torch.stack([encoderOut for encoderOut in encoderOuts],dim=0)
