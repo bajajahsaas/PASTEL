@@ -19,13 +19,13 @@
 #    echo "----------xxx------------------"
 #done
 
-modelName=simpleModelGlove2BothPretrainedPointer4_10
+modelName=simpleModelGlove2BothPretrainedPointer10_6
 
 for sty in STYLED #ethnic gender Country edu TOD #Politics
 do
     echo "----------------------"
     echo "Training Model For $sty"
-    CUDA_VISIBLE_DEVICES="1" python -u main.py -mode=train -preTrain -pointer -NUM_PRETRAIN_EPOCHS=10 -initGlove2 -initGloveEncode2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=20 | tee logsmodel/${modelName}_$sty
+    CUDA_VISIBLE_DEVICES="1" python -u main.py -mode=train -preTrain -pointer -NUM_PRETRAIN_EPOCHS=10 -initGlove2 -initGloveEncode2 -modelName=${modelName}_$sty -emb_size=300 -hidden_size=384  -problem=$sty -NUM_EPOCHS=6 | tee logsmodel/${modelName}_$sty
     echo "Finished Training Model for $sty"
     echo "----------xxx------------------"
 done
