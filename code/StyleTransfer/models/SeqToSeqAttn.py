@@ -146,7 +146,7 @@ class SeqToSeqAttn():
 
     def decodeAll(self, srcBatches, modelName, method="greedy", evalMethod="BLEU", suffix="test", lmObj=None,
                   testIndex=None, loss_function=None, optimizer=None, getAtt=False):
-        # est_src_batches, modelName, method="BEAM", evalMethod="BLEU", suffix="test",
+        # test_src_batches, modelName, method="BEAM", evalMethod="BLEU", suffix="test",
         #                             lmObj=None, getAtt=False
         tgtStrings = []
         tgtTimes = []
@@ -155,6 +155,7 @@ class SeqToSeqAttn():
         totalTime = 0.0
         print "Decoding Start Time:", datetime.datetime.now()
         for i, srcBatch in enumerate(srcBatches):
+            # iterate each source sentence in test_set and make it stylised
             tgtString = None
             startTime = datetime.datetime.now()
             if method == "greedy":
@@ -220,26 +221,30 @@ class SeqToSeqAttn():
             timeFile.write(str(tgtTime) + "\n")
         timeFile.close()
 
-        if evalMethod == "BLEU":
+        if evalMethod == "BLEU":  # True
             import os
-            if self.cnfg.problem == "MT":
+            if self.cnfg.problem == "MT":  # False
                 BLEUOutput = os.popen(
                     "perl multi-bleu.perl -lc " + "data/" + suffix + ".en-de.low.en" + " < " + outFileName).read()
-            elif self.cnfg.problem == "CHESS":
+            elif self.cnfg.problem == "CHESS":  # False
                 BLEUOutput = os.popen(
                     "perl multi-bleu.perl -lc " + "data/" + suffix + ".che-eng.single.en" + " < " + outFileName).read()
 
             print BLEUOutput
         # Compute BLEU
-        elif evalMethod == "ROUGE":
+        elif evalMethod == "ROUGE":  # False
             print "To implement ROUGE"
 
         return tgtStrings
 
     def beamDecode(self, srcBatch, useLM=False, lmObj=None, beamSib=False):
-        k = self.cnfg.beamSize
+        #  test set (source sentences), useLM = False, lmObj = None
+        k = self.cnfg.beamSize  # default = 3
+
+        # srcBatch : batch_size x seqlen
+        batch_size = srcBatch.shape[0]
         srcSentenceLength = srcBatch.shape[1]
-        srcBatch = srcBatch.T
+        srcBatch = srcBatch.T # seqlen x batchsize
         self.enc_hidden = self.init_hidden(srcBatch)
         enc_out = None
         encoderOuts = []
@@ -342,14 +347,43 @@ class SeqToSeqAttn():
                 # print beam[0][0].size()
                 # print beam[0][1].size()
                 # print encOutTensor.size()
-                out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, beam[0],
+                if not self.cnfg.pointer:
+                    out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, beam[0],
                                                    feedContextVector=False, inference=True)
-
+                else:
+                    out, newHidden, c_t, a_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, beam[0],
+                                                   feedContextVector=False, inference=True)
                 del o_t
 
                 out = out.view(1, -1)
                 if self.cnfg.use_attention:
-                    scores = F.log_softmax(self.W(torch.cat([out, c_t], 1)))
+                    if not self.cnfg.pointer:
+                        scores = F.log_softmax(self.W(torch.cat([out, c_t], 1)))
+                    else:
+                        srcBatch_tensor = torch.from_numpy(srcBatch)
+                        if torch.cuda.is_available():
+                            srcBatch_tensor = srcBatch_tensor.cuda()
+                        # dim: seqlen x batch_size
+
+                        logits = torch.cat([out, c_t], 1)
+                        output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
+                        if torch.cuda.is_available():
+                            output = output.cuda()
+
+                        # distribute probabilities between generator and pointer
+                        prob_ptr_logits = self.ptr(logits)
+                        prob_ptr = F.sigmoid(prob_ptr_logits)  # (batch size, 1)
+                        prob_gen = 1 - prob_ptr
+                        # add generator probabilities to output
+                        gen_output = F.softmax(logits, dim=1)  # can't use log_softmax due to adding probabilities
+                        output[:, :self.cnfg.tgtVocabSize] = prob_gen * gen_output
+                        # using source side vocab to generate words
+                        # add pointer probabilities to output
+                        ptr_output = a_t
+                        # batchsize x seq_len
+                        output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
+                        scores = torch.log(output + 1e-31)
+
                 else:
                     scores = F.log_softmax(self.W(out))
 
@@ -708,6 +742,7 @@ class SeqToSeqAttn():
                     # iterate over time stamps
                     # print('decoderOut', len(decoderOut)): # batch size
                     logits = self.W(decoderOut)
+                    # Todo: how to separately handle first attention a_0 in training and testing?
                     # Todo: fix ext_vocab_size: seq2seq summarizer: utils.py L206
                     output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
                     if torch.cuda.is_available():

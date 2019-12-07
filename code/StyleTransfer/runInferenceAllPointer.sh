@@ -11,7 +11,7 @@
 modelName=simpleModel
 
 declare -A styNo=(
-    [STYLED]=1
+    [STYLED]=2   # Checkpoint for best performing model in training
     [ethnic]=2
 )
 
@@ -26,7 +26,7 @@ testName=test
 #    echo "Done for $sty"
 #done
 
-modelName=simpleModelGlove2BothPretrainedPointer
+modelName=simpleModelGlove2BothPretrainedPointer10_20
 
 for sty in STYLED #Politics ethnic gender Country edu TOD
 do
