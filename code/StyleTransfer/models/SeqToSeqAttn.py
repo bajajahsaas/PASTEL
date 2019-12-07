@@ -681,7 +681,7 @@ class SeqToSeqAttn():
 
                 if self.cnfg.pointer:
                     # Todo: fix ext_vocab_size: seq2seq summarizer: utils.py L206
-                    output = torch.zeros(batch_size, self.cnfg.srcVocabSize)
+                    output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
                     if torch.cuda.is_available():
                         output = output.cuda()
 
