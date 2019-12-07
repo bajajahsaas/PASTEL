@@ -520,6 +520,7 @@ class SeqToSeqAttn():
         srcBatch = srcBatch.T
         srcMask = srcMask.T
         # timestamps x batchsize
+
         # Init encoder. We don't need start here since we don't softmax.
         self.enc_hidden = self.init_hidden(srcBatch)  # 1 x batchsize x hidden_dim
         # print "Src Batch Size:",srcBatch.shape
@@ -578,10 +579,9 @@ class SeqToSeqAttn():
         if torch.cuda.is_available():
             zeroInit = zeroInit.cuda()
         c_0 = autograd.Variable(zeroInit)
-        a_0 = autograd.Variable(zeroInit)
 
         batch = batch.T
-        # timestamps x batchsize
+        # timestamps x batchsize_target
         batch_size = batch.shape[1]
 
         self.hidden = self.enc_hidden  # last hidden layer of encoder is the first hidden of decoder
@@ -599,6 +599,11 @@ class SeqToSeqAttn():
                 else:
                     self.hidden = torch.add(self.enc_hidden, self.rev_hidden)
 
+        encoder_seqlen = len(srcBatch)
+        batch_size_src = len(srcBatch[0])
+
+        a_0 = autograd.Variable(torch.zeros((encoder_seqlen, batch_size_src)))
+        print('a_0',a_0.size())
         # Init with START token
         if self.cnfg.use_attention:
             contextVectors = []
@@ -606,6 +611,7 @@ class SeqToSeqAttn():
             if self.cnfg.pointer:
                 attnweights = []
                 attnweights.append(a_0)
+
         row = np.array([self.cnfg.start, ] * batch.shape[1])
 
         tgtEmbedIndex = self.getIndex(row, inference=inference)
@@ -623,6 +629,7 @@ class SeqToSeqAttn():
         decoderOuts = [out.squeeze(0), ]
         tgts = []
         encoderOutTensor = torch.stack([encoderOut for encoderOut in encoderOuts], dim=0)
+        print('encoderOutTensor', encoderOutTensor.size())
         for rowId, row in enumerate(batch):
             # iterate over timestamps of target side
             tgtEmbedIndex = self.getIndex(row, inference=inference)
@@ -705,7 +712,8 @@ class SeqToSeqAttn():
                     print('srcBatch_tensor after transpose', srcBatch_tensor.transpose(0, 1).size())
                     print('ptr product', (prob_ptr * ptr_output).size())
                     print('ptr attnwt', attnwt.size())
-                    output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
+                    # src_seqlen x batchsize
+                    output.scatter_add_(1, srcBatch_tensor, prob_ptr * ptr_output)
 
                     l = loss_function(output, tgt)
 

@@ -157,17 +157,22 @@ class AttnDecoderRNN(nn.Module):
             if not feedContextVector:
                 o_t_expanded=o_t.expand(encoderOutTensor.size())
                 dotProduct=torch.transpose(torch.sum(torch.mul(encoderOutTensor,o_t_expanded),2),0,1)
+                print('dotprod', dotProduct.size())
                 del o_t_expanded
                 if not getAtt:
                     if not self.sigmoid:
-                        alphas=torch.transpose(F.softmax(dotProduct),0,1).unsqueeze(2).expand(encoderOutTensor.size())
+                        attn_dist = F.softmax(dotProduct)
+                        alphas=torch.transpose(attn_dist,0,1).unsqueeze(2).expand(encoderOutTensor.size())
                     else:
-                        alphas=torch.transpose(F.sigmoid(dotProduct),0,1).unsqueeze(2).expand(encoderOutTensor.size())
+                        attn_dist = F.sigmoid(dotProduct)
+                        alphas=torch.transpose(attn_dist,0,1).unsqueeze(2).expand(encoderOutTensor.size())
                 else:
                     if not self.sigmoid:
-                        firstAlphas=torch.transpose(F.softmax(dotProduct),0,1).unsqueeze(2)
+                        attn_dist = F.softmax(dotProduct)
+                        firstAlphas=torch.transpose(attn_dist,0,1).unsqueeze(2)
                     else:
-                        firstAlphas=torch.transpose(F.sigmoid(dotProduct),0,1).unsqueeze(2)
+                        attn_dist = F.sigmoid(dotProduct)
+                        firstAlphas=torch.transpose(attn_dist,0,1).unsqueeze(2)
                     alphas=firstAlphas.expand(encoderOutTensor.size())
                     alphasNumpy=firstAlphas.data.cpu().numpy()
                 del o_t
@@ -192,7 +197,8 @@ class AttnDecoderRNN(nn.Module):
                 if feedContextVector:  # first time step, alpha not calculated
                     return out, hidden, c_t
                 else:
-                    return out, hidden, c_t, alphas
+                    print ('attn_dist', attn_dist.size())
+                    return out, hidden, c_t, attn_dist
         else:
             return out,hidden,c_t,alphasNumpy
 
