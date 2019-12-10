@@ -133,7 +133,7 @@ class AttnDecoderRNN(nn.Module):
             self.embeddings=reference_embeddings
         else:
             self.embeddings=nn.Embedding(self.vocabSize,self.emb_size)
-        self.lin = nn.Linear(self.hidden_size * 2, self.hidden_size)
+        self.lin = LinearLayer(self.hidden_size * 2, self.hidden_size)
 
         if self.use_attention:
             if self.use_LSTM:
