@@ -295,6 +295,7 @@ class SeqToSeqAttn():
 
         beams=[(self.hidden,out,0.0,[tgts[0],],False)] #Current state, current output, current score, current tgts, stopped boolean
         completedBeams=[] #Stop when this reaches k.
+       
 
         steps=0
         while len(completedBeams)<k and steps<2*srcSentenceLength+10: #self.cnfg.TGT_LEN_LIMIT:
@@ -305,6 +306,9 @@ class SeqToSeqAttn():
                     continue
                 row=np.array([beam[3][-1],]*1)
                 tgtEmbedIndex=self.getIndex(row,inference=True)
+                row1=np.array([beam[3][:-1],]*1)
+                tgtEmbedIndex1=self.getIndex(row1,inference=True) 
+                #print(tgtEmbedIndex1.size()[1])
                 o_t=beam[1] #out
                 #print np.shape(row)
                 #print tgtEmbedIndex.size()
@@ -312,7 +316,7 @@ class SeqToSeqAttn():
                 #print beam[0][0].size()
                 #print beam[0][1].size()
                 #print encOutTensor.size()
-                out,newHidden,c_t=self.decoder(1,tgtEmbedIndex,None,torch.transpose(encOutTensor,0,1),o_t,beam[0],feedContextVector=False,inference=True)
+                out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, tgtEmbedIndex1,torch.transpose(encOutTensor, 0, 1), o_t,beam[0],feedContextVector=False, inference=True,decod_attn=True)
 
                 del o_t
                 out=out.view(1,-1)
@@ -443,9 +447,6 @@ class SeqToSeqAttn():
         out,self.hidden,c_0=self.decoder(1,tgtEmbedIndex,None,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
         #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
         start=torch.zeros([1,1,384])
-        if torch.cuda.is_available():
-            start=start.cuda()
-
         prevouts=[start,out,]
         out=out.view(1,-1)
         if self.cnfg.use_attention:
@@ -594,8 +595,6 @@ class SeqToSeqAttn():
                 del self.rev_hidden
         decoderOuts=[out.squeeze(0),]
         start=torch.zeros([1,batch.shape[1],384])
-        if torch.cuda.is_available():
-            start = start.cuda()
         prevouts=[start,out,]
         tgts=[]
         encoderOutTensor=torch.stack([encoderOut for encoderOut in encoderOuts],dim=0)
