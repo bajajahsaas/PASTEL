@@ -9,5 +9,7 @@ PASTEL is a parallelly annotated stylistic language dataset.
 The dataset consists of ~41K parallel sentences and 8.3K parallel stories annotated across different personas.
 
 
+## Approach
+Implemented copy-pointer based Seq2Seq models for the task of multi-persona style transfer. Achieved 18% gain in the BLEU score for stylized sentences while retaining the original meaning of the source text.
 
-
+Achieved 15-20% improvement in F1 scores using BERT-based finetuning models for style classification task.
