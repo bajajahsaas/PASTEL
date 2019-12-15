@@ -26,7 +26,7 @@ testName=test
 #    echo "Done for $sty"
 #done
 
-modelName=simpleModelGlove2BothPretrainedDec_Attn
+modelName=simpleModelGlove2BothPretrainedDec_Attn10_10
 
 for sty in STYLED #Politics ethnic gender Country edu TOD
 do
