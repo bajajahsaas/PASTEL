@@ -589,6 +589,8 @@ class SeqToSeqAttn():
                 del self.rev_hidden
         decoderOuts=[out.squeeze(0),]
         start=torch.zeros([1,batch.shape[1],384])
+        if torch.cuda.is_available():
+            start = start.cuda()
         prevouts=[start,out,]
         tgts=[]
         encoderOutTensor=torch.stack([encoderOut for encoderOut in encoderOuts],dim=0)
