@@ -296,7 +296,6 @@ class SeqToSeqAttn():
         beams=[(self.hidden,out,0.0,[tgts[0],],False)] #Current state, current output, current score, current tgts, stopped boolean
         completedBeams=[] #Stop when this reaches k.
        
-
         steps=0
         while len(completedBeams)<k and steps<2*srcSentenceLength+10: #self.cnfg.TGT_LEN_LIMIT:
             #print "Step ",steps
@@ -310,13 +309,8 @@ class SeqToSeqAttn():
                 tgtEmbedIndex1=self.getIndex(row1,inference=True) 
                 #print(tgtEmbedIndex1.size()[1])
                 o_t=beam[1] #out
-                #print np.shape(row)
-                #print tgtEmbedIndex.size()
-                #print o_t.size()
-                #print beam[0][0].size()
-                #print beam[0][1].size()
-                #print encOutTensor.size()
-                out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, tgtEmbedIndex1,torch.transpose(encOutTensor, 0, 1), o_t,beam[0],feedContextVector=False, inference=True,decod_attn=True)
+     
+                out, newHidden, c_t = self.decoder(1, tgtEmbedIndex,tgtEmbedIndex1,torch.transpose(encOutTensor, 0, 1), o_t,beam[0],feedContextVector=False, inference=True,decod_attn=True)
 
                 del o_t
                 out=out.view(1,-1)
@@ -447,8 +441,6 @@ class SeqToSeqAttn():
         out,self.hidden,c_0=self.decoder(1,tgtEmbedIndex,None,None,None,self.hidden,feedContextVector=True,contextVector=c_0)
         #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
         start=torch.zeros([1,1,384])
-        if torch.cuda.is_available():
-            start=start.cuda()
         prevouts=[start,out,]
         out=out.view(1,-1)
         if self.cnfg.use_attention:
@@ -605,12 +597,13 @@ class SeqToSeqAttn():
             o_t=decoderOuts[-1]
             x=torch.cat(prevouts[:len(prevouts)-1])
             #forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
-            out,self.hidden,c_t=self.decoder(batch.shape[1],tgtEmbedIndex,x,encoderOutTensor,o_t,self.hidden,feedContextVector=False,decod_attn=True)
+            #row1=np.array(tgts)
+            #tgtEmbedIndex1=self.getIndex(row1)
+            #print(tgtEmbedIndex1.size())
+            out,self.hidden,c_t=self.decoder(batch.shape[1],tgtEmbedIndex,tgts,encoderOutTensor,o_t,self.hidden,feedContextVector=False,decod_attn=True)
             tgts.append(self.getIndex(row))
             decoderOuts.append(out.squeeze(0))
             prevouts.append(out)
-            
-
             
             contextVectors.append(c_t) 
 
