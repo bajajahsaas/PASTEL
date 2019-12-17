@@ -36,7 +36,7 @@ class SeqToSeqAttn():
                                        self.cnfg.use_LSTM, True, reference_embeddings=self.encoder.embeddings)
         # share_embeddings is False, no use of reference_embeddings here. sigmoid is False too
         self.decoder = AttnDecoderRNN(self.wids_tgt, cnfg.tgtVocabSize, cnfg.emb_size, cnfg.hidden_size, cnfg.use_LSTM,
-                                      cnfg.use_attention, cnfg.share_embeddings, self.cnfg.pointer,
+                                      cnfg.use_attention, cnfg.share_embeddings, self.cnfg.pointer, self.cnfg.decAttn,
                                       reference_embeddings=self.encoder.embeddings, sigmoid=self.cnfg.sigmoid)
 
         if self.cnfg.initGlove or self.cnfg.initGlove2:
