@@ -20,7 +20,7 @@ MAXFEATURE=70000
 #LTYPES=('controlled' 'combined')
 #LEVELS=('sentences' 'stories')
 
-LTYPES=('controlled')
+LTYPES=('combined')
 LEVELS=('sentences')
 #EMD='w2v'
 EMB='bert'

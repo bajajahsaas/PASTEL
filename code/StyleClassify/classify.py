@@ -176,7 +176,7 @@ def classify(model_dir,feature_filename, feature_dat, class_filename, ablation, 
             #cf_sorted = [(c,f) for c,f in cf_sorted] #    if not f.startswith('emb')
             cf_sorted = [(c,f) for c,f in cf_sorted]
 
-            print ('Class: ',cls, ', '.join(['[%s x %s]'%(f,round(c,2)) for c,f in cf_sorted[:20]]))
+            print ('Class: ',cls, ', '.join(['[%s x %s]'%(f,round(c,2)) for c,f in cf_sorted[:200]]))
 
             fout_ablation.write('%s\n'%(cls))
             cnt = 0
