@@ -367,13 +367,14 @@ class SeqToSeqAttn():
                             srcBatch_tensor = srcBatch_tensor.cuda()
                         # dim: seqlen x batch_size
 
-                        logits = torch.cat([out, c_t], 1)
+                        decoderOut = torch.cat([out, c_t], 1)
+                        logits = self.W(decoderOut)
                         output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
                         if torch.cuda.is_available():
                             output = output.cuda()
 
                         # distribute probabilities between generator and pointer
-                        prob_ptr_logits = self.ptr(logits)
+                        prob_ptr_logits = self.ptr(decoderOut)
                         prob_ptr = F.sigmoid(prob_ptr_logits)  # (batch size, 1)
                         prob_gen = 1 - prob_ptr
                         # add generator probabilities to output
@@ -385,7 +386,6 @@ class SeqToSeqAttn():
                         # batchsize x seq_len
                         output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
                         scores = torch.log(output + 1e-31)
-
                 else:
                     scores = F.log_softmax(self.W(out))
 
