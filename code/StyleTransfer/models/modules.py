@@ -176,13 +176,13 @@ class AttnDecoderRNN(nn.Module):
             else:
                 c_t=contextVector
 
-        print "self.use_attention is ", self.use_attention
+        # print "self.use_attention is ", self.use_attention
         tgtEmbeds=self.embeddings(tgtEmbedIndex)
-        print "tgtEmbeds shape : ", tgtEmbeds.shape
-        print "batchSize : ", batchSize
+        # print "tgtEmbeds shape : ", tgtEmbeds.shape
+        # print "batchSize : ", batchSize
         if inference:
             c_t=c_t.view(1,-1)
-            print "c_t shape : ", c_t.shape
+            # print "c_t shape : ", c_t.shape
         if self.use_attention:
             tgtEmbeds=torch.cat([tgtEmbeds,c_t],1).view(1,batchSize,-1)
         else:
