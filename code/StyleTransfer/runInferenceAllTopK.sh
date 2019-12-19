@@ -11,7 +11,7 @@
 modelName=simpleModel
 
 declare -A styNo=(
-    [STYLED]=5
+    [STYLED]=1
     [ethnic]=2
 )
 
@@ -26,7 +26,7 @@ testName=test
 #    echo "Done for $sty"
 #done
 
-modelName=simpleModelGlove2BothPretrainedPointer10_6
+modelName=simpleModelGlove2BothPretrained
 
 for sty in STYLED #Politics ethnic gender Country edu TOD
 do
