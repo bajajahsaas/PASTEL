@@ -121,7 +121,7 @@ class EncoderRNNModel(nn.Module):
 ################################################################
 
 class AttnDecoderRNN(nn.Module):
-    def __init__(self,wids,vocabSize,emb_size,hidden_size,use_LSTM,use_attention,share_embeddings,pointer,reference_embeddings=None,sigmoid=False):
+    def __init__(self,wids,vocabSize,emb_size,hidden_size,use_LSTM,use_attention,share_embeddings,pointer,decAttn,reference_embeddings=None,sigmoid=False):
         super(AttnDecoderRNN,self).__init__()
         self.vocabSize=vocabSize
         self.emb_size=emb_size
@@ -131,6 +131,7 @@ class AttnDecoderRNN(nn.Module):
         self.wids=wids
         self.sigmoid=sigmoid
         self.pointer=pointer
+        self.decAttn = decAttn
 
         if share_embeddings:
             self.embeddings=reference_embeddings

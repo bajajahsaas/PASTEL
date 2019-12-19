@@ -103,6 +103,7 @@ def parseArguments():
     parser.add_argument('-typ', dest="typ", default="two_tuple", help="input format")
     parser.add_argument('-useLM', action='store_true', dest='useLM', default=False)
     parser.add_argument('-pointer', action='store_true', dest='pointer', default=False)
+    parser.add_argument('-decAttn', action='store_true', dest='decAttn', default=False)
 
     # TGT_LEN_LIMIT=1000
 
@@ -140,5 +141,6 @@ else:
         print "Done Loading LM"
     import solver
     print('Pointer method is : ', params.pointer)
+    print('Decoder self attention is : ', params.decAttn)
     seq2seq = solver.Solver(params)
     seq2seq.main()
