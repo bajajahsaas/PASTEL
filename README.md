@@ -8,7 +8,7 @@ Data and baselines taken from ["(Male, Bachelor) and (Female, Ph.D) have differe
 
 ## The PASTEL dataset
 PASTEL is a parallelly annotated stylistic language dataset.
-The dataset consists of ~41K parallel sentences and 8.3K parallel stories annotated across different personas.
+The dataset consists of ~41K parallel sentences annotated across different personas.
 
 
 ## Approach
