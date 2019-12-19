@@ -533,6 +533,7 @@ class SeqToSeqAttn():
         encOutTensor = torch.cat([encoderOut.view(1, 1, self.cnfg.hidden_size) for encoderOut in encoderOuts], 1)
 
         while argmaxValue != self.cnfg.stop and len(tgts) < 2 * srcSentenceLength + 10:  # self.cnfg.TGT_LEN_LIMIT:
+            print "iteration #", len(tgts)
             row = np.array([argmaxValue, ] * 1)
             tgtEmbedIndex = self.getIndex(row, inference=True)
             o_t = out  # out
@@ -579,14 +580,14 @@ class SeqToSeqAttn():
                 scores = F.softmax(self.W(out))
 
             maxValues, argmaxes = torch.topk(scores, k=k, dim=1)
-
+            print "top k shape", argmaxes.shape
             argmaxValues = argmaxes.cpu().squeeze().data.numpy()
             maxValues = maxValues.cpu().squeeze().data.numpy()
             
             maxValues /= maxValues.sum()
 
             argmaxValue = np.random.choice(argmaxValues, 1, p = maxValues)
-
+            print argmaxValue
             tgts.append(argmaxValue)
         
         if tgts[-1] == self.cnfg.stop:
