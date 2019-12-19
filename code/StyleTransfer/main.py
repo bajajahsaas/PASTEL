@@ -140,5 +140,6 @@ else:
         print "Done Loading LM"
     import solver
     print('Pointer method is : ', params.pointer)
+    print('Decoding method is : ', params.method)
     seq2seq = solver.Solver(params)
     seq2seq.main()
