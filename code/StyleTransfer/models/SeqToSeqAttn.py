@@ -277,7 +277,6 @@ class SeqToSeqAttn():
                 del revcoderOuts
                 del rev_out
             del srcEmbedIndexSeq
-            del srcBatch
             del enc_out
 
         zeroInit = torch.zeros(encoderOuts[-1].size())
