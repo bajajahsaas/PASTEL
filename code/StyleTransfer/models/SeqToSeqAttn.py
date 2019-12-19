@@ -390,6 +390,8 @@ class SeqToSeqAttn():
                     scores = F.log_softmax(self.W(out))
 
                 maxValues, argmaxes = torch.topk(scores, k=k, dim=1)
+                print(maxValues.size())
+                print(argmaxes.size())
                 argmaxValues = argmaxes.cpu().data.numpy()
                 maxValues = maxValues.cpu().data.numpy()
                 for kprime in range(k):
