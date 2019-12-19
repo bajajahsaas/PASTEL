@@ -586,7 +586,7 @@ class SeqToSeqAttn():
             
             maxValues /= maxValues.sum()
 
-            argmaxValue = np.random.choice(argmaxValues, 1, p = maxValues)
+            argmaxValue = np.random.choice(argmaxValues, 1, p = maxValues)[0]
             print argmaxValue
             tgts.append(argmaxValue)
         
