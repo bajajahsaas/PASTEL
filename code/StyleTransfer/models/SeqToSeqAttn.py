@@ -486,108 +486,108 @@ class SeqToSeqAttn():
             del srcBatch
             del enc_out
 
-            zeroInit = torch.zeros(encoderOuts[-1].size())
-            if torch.cuda.is_available():
-                zeroInit = zeroInit.cuda()
-            c_0 = autograd.Variable(zeroInit)
+        zeroInit = torch.zeros(encoderOuts[-1].size())
+        if torch.cuda.is_available():
+            zeroInit = zeroInit.cuda()
+        c_0 = autograd.Variable(zeroInit)
 
-            self.hidden = self.enc_hidden
-            if self.cnfg.use_reverse:
-                if self.cnfg.init_mixed == False:
-                    if self.cnfg.init_enc:
-                        self.hidden = self.enc_hidden
-                    else:
-                        self.hidden = self.rev_hidden
+        self.hidden = self.enc_hidden
+        if self.cnfg.use_reverse:
+            if self.cnfg.init_mixed == False:
+                if self.cnfg.init_enc:
+                    self.hidden = self.enc_hidden
                 else:
-                    if self.cnfg.use_LSTM:
-                        self.hidden = (torch.add(self.enc_hidden[0], self.rev_hidden[0]),torch.add(self.enc_hidden[1], self.rev_hidden[1]))
-                    else:
-                        self.hidden = torch.add(self.enc_hidden, self.rev_hidden)
+                    self.hidden = self.rev_hidden
+            else:
+                if self.cnfg.use_LSTM:
+                    self.hidden = (torch.add(self.enc_hidden[0], self.rev_hidden[0]),torch.add(self.enc_hidden[1], self.rev_hidden[1]))
+                else:
+                    self.hidden = torch.add(self.enc_hidden, self.rev_hidden)
 
-            tgts = []
-            
-            row = np.array([self.cnfg.start, ] * 1)
+        tgts = []
+        
+        row = np.array([self.cnfg.start, ] * 1)
 
+        tgtEmbedIndex = self.getIndex(row, inference=True)
+
+        out, self.hidden, c_0 = self.decoder(1, tgtEmbedIndex, None, None, self.hidden, feedContextVector=True, contextVector=c_0)
+        # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
+
+        out = out.view(1, -1)
+        if self.cnfg.use_attention:
+            scores = self.W(torch.cat([out, c_0], 1))
+        else:
+            scores = self.W(out)
+
+        maxValues, argmaxes = torch.max(scores, 1)
+        argmaxValue = argmaxes.view(1).cpu().data.numpy()[0]
+        tgts.append(argmaxValue)
+
+        if self.cnfg.mem_optimize:
+            if not (self.cnfg.decoder_prev_random or self.cnfg.mixed_decoding):
+                del c_0
+            del self.enc_hidden
+            if self.cnfg.use_reverse:
+                del self.rev_hidden
+
+        encOutTensor = torch.cat([encoderOut.view(1, 1, self.cnfg.hidden_size) for encoderOut in encoderOuts], 1)
+
+        while argmaxValue != self.cnfg.stop and len(tgts) < 2 * srcSentenceLength + 10:  # self.cnfg.TGT_LEN_LIMIT:
+            row = np.array([argmaxValue, ] * 1)
             tgtEmbedIndex = self.getIndex(row, inference=True)
-
-            out, self.hidden, c_0 = self.decoder(1, tgtEmbedIndex, None, None, self.hidden, feedContextVector=True, contextVector=c_0)
-            # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
+            o_t = out  # out
+            # print np.shape(row)
+            # print tgtEmbedIndex.size()
+            # print o_t.size()
+            # print encOutTensor.size()
+            if not self.cnfg.pointer:
+                out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, self.hidden, feedContextVector=False, inference=True)
+            else:
+                out, newHidden, c_t, a_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, self.hidden, feedContextVector=False, inference=True)
+            del o_t
 
             out = out.view(1, -1)
             if self.cnfg.use_attention:
-                scores = self.W(torch.cat([out, c_0], 1))
-            else:
-                scores = self.W(out)
-
-            maxValues, argmaxes = torch.max(scores, 1)
-            argmaxValue = argmaxes.view(1).cpu().data.numpy()[0]
-            tgts.append(argmaxValue)
-
-            if self.cnfg.mem_optimize:
-                if not (self.cnfg.decoder_prev_random or self.cnfg.mixed_decoding):
-                    del c_0
-                del self.enc_hidden
-                if self.cnfg.use_reverse:
-                    del self.rev_hidden
-
-            encOutTensor = torch.cat([encoderOut.view(1, 1, self.cnfg.hidden_size) for encoderOut in encoderOuts], 1)
-
-            while argmaxValue != self.cnfg.stop and len(tgts) < 2 * srcSentenceLength + 10:  # self.cnfg.TGT_LEN_LIMIT:
-                row = np.array([argmaxValue, ] * 1)
-                tgtEmbedIndex = self.getIndex(row, inference=True)
-                o_t = out  # out
-                # print np.shape(row)
-                # print tgtEmbedIndex.size()
-                # print o_t.size()
-                # print encOutTensor.size()
                 if not self.cnfg.pointer:
-                    out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, self.hidden, feedContextVector=False, inference=True)
+                    scores = F.softmax(self.W(torch.cat([out, c_t], 1)))
                 else:
-                    out, newHidden, c_t, a_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t, self.hidden, feedContextVector=False, inference=True)
-                del o_t
+                    srcBatch_tensor = torch.from_numpy(srcBatch)
+                    if torch.cuda.is_available():
+                        srcBatch_tensor = srcBatch_tensor.cuda()
+                        # dim: seqlen x batch_size
 
-                out = out.view(1, -1)
-                if self.cnfg.use_attention:
-                    if not self.cnfg.pointer:
-                        scores = F.softmax(self.W(torch.cat([out, c_t], 1)))
-                    else:
-                        srcBatch_tensor = torch.from_numpy(srcBatch)
-                        if torch.cuda.is_available():
-                            srcBatch_tensor = srcBatch_tensor.cuda()
-                            # dim: seqlen x batch_size
+                    logits = torch.cat([out, c_t], 1)
+                    output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
+                    if torch.cuda.is_available():
+                        output = output.cuda()
 
-                        logits = torch.cat([out, c_t], 1)
-                        output = torch.zeros(batch_size, self.cnfg.tgtVocabSize)
-                        if torch.cuda.is_available():
-                            output = output.cuda()
+                    # distribute probabilities between generator and pointer
+                    prob_ptr_logits = self.ptr(logits)
+                    prob_ptr = F.sigmoid(prob_ptr_logits)  # (batch size, 1)
+                    prob_gen = 1 - prob_ptr
+                    # add generator probabilities to output
+                    gen_output = F.softmax(logits, dim=1)  # can't use log_softmax due to adding probabilities
+                    output[:, :self.cnfg.tgtVocabSize] = prob_gen * gen_output
+                    # using source side vocab to generate words
+                    # add pointer probabilities to output
+                    ptr_output = a_t
+                    # batchsize x seq_len
+                    output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
+                    scores = output
 
-                        # distribute probabilities between generator and pointer
-                        prob_ptr_logits = self.ptr(logits)
-                        prob_ptr = F.sigmoid(prob_ptr_logits)  # (batch size, 1)
-                        prob_gen = 1 - prob_ptr
-                        # add generator probabilities to output
-                        gen_output = F.softmax(logits, dim=1)  # can't use log_softmax due to adding probabilities
-                        output[:, :self.cnfg.tgtVocabSize] = prob_gen * gen_output
-                        # using source side vocab to generate words
-                        # add pointer probabilities to output
-                        ptr_output = a_t
-                        # batchsize x seq_len
-                        output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
-                        scores = output
+            else:
+                scores = F.softmax(self.W(out))
 
-                else:
-                    scores = F.softmax(self.W(out))
+            maxValues, argmaxes = torch.topk(scores, k=k, dim=1)
 
-                maxValues, argmaxes = torch.topk(scores, k=k, dim=1)
+            argmaxValues = argmaxes.cpu().squeeze().data.numpy()
+            maxValues = maxValues.cpu().squeeze().data.numpy()
+            
+            maxValues /= maxValues.sum()
 
-                argmaxValues = argmaxes.cpu().squeeze().data.numpy()
-                maxValues = maxValues.cpu().squeeze().data.numpy()
-                
-                maxValues /= maxValues.sum()
+            argmaxValue = np.random.choice(argmaxValues, 1, p = maxValues)
 
-                argmaxValue = np.random.choice(argmaxValues, 1, p = maxValues)
-
-                tgts.append(argmaxValue)
+            tgts.append(argmaxValue)
         
         if tgts[-1] == self.cnfg.stop:
             tgts = tgts[:-1]
