@@ -549,7 +549,7 @@ class SeqToSeqAttn():
                 out = out.view(1, -1)
                 if self.cnfg.use_attention:
                     if not self.cnfg.pointer:
-                        scores = F.log_softmax(self.W(torch.cat([out, c_t], 1)))
+                        scores = F.softmax(self.W(torch.cat([out, c_t], 1)))
                     else:
                         srcBatch_tensor = torch.from_numpy(srcBatch)
                         if torch.cuda.is_available():
@@ -573,16 +573,18 @@ class SeqToSeqAttn():
                         ptr_output = a_t
                         # batchsize x seq_len
                         output.scatter_add_(1, srcBatch_tensor.transpose(0, 1), prob_ptr * ptr_output)
-                        scores = torch.log(output + 1e-31)
+                        scores = output
 
                 else:
-                    scores = F.log_softmax(self.W(out))
+                    scores = F.softmax(self.W(out))
 
                 maxValues, argmaxes = torch.topk(scores, k=k, dim=1)
 
                 argmaxValues = argmaxes.cpu().squeeze().data.numpy()
                 maxValues = maxValues.cpu().squeeze().data.numpy()
                 
+                maxValues /= maxValues.sum()
+
                 argmaxValue = np.random.choice(argmaxValues, 1, p = maxValues)
 
                 tgts.append(argmaxValue)
