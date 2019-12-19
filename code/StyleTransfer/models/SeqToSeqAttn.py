@@ -158,6 +158,7 @@ class SeqToSeqAttn():
             # iterate each source sentence in test_set and make it stylised
             tgtString = None
             startTime = datetime.datetime.now()
+            print(method)
             if method == "greedy":
                 if not getAtt:
                     tgtString = self.greedyDecode(srcBatch)
