@@ -340,6 +340,9 @@ class SeqToSeqAttn():
                     continue
                 row = np.array([beam[3][-1], ] * 1)
                 tgtEmbedIndex = self.getIndex(row, inference=True)
+                
+                row1=np.array([beam[3][:-1],]*1)
+                tgtEmbedIndex1=self.getIndex(row1,inference=True) 
                 o_t = beam[1]  # out
                 # print np.shape(row)
                 # print tgtEmbedIndex.size()
@@ -348,13 +351,13 @@ class SeqToSeqAttn():
                 # print beam[0][1].size()
                 # print encOutTensor.size()
                 if not self.cnfg.pointer:
-                    out, newHidden, c_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t,
+                    out, newHidden, c_t = self.decoder(1, tgtEmbedIndex,tgtEmbedIndex1, torch.transpose(encOutTensor, 0, 1), o_t,
                                                        beam[0],
-                                                       feedContextVector=False, inference=True)
+                                                       feedContextVector=False, inference=True,at_flag=True)
                 else:
-                    out, newHidden, c_t, a_t = self.decoder(1, tgtEmbedIndex, torch.transpose(encOutTensor, 0, 1), o_t,
+                    out, newHidden, c_t, a_t = self.decoder(1, tgtEmbedIndex,tgtEmbedIndex1, torch.transpose(encOutTensor, 0, 1), o_t,
                                                             beam[0],
-                                                            feedContextVector=False, inference=True)
+                                                            feedContextVector=False, inference=True,at_flag=True)
                 del o_t
 
                 out = out.view(1, -1)
@@ -503,9 +506,9 @@ class SeqToSeqAttn():
         row = np.array([self.cnfg.start, ] * 1)
 
         tgtEmbedIndex = self.getIndex(row, inference=True)
-
-        out, self.hidden, c_0 = self.decoder(1, tgtEmbedIndex, None, None, self.hidden, feedContextVector=True,
-                                             contextVector=c_0)
+        
+        out, self.hidden, c_0 = self.decoder(1, tgtEmbedIndex,None, None, None, self.hidden, feedContextVector=True,
+                                             contextVector=c_0,at_flag=False)
         # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
 
         out = out.view(1, -1)
@@ -585,6 +588,7 @@ class SeqToSeqAttn():
         srcEmbedIndexSeq = []
         for rowId, row in enumerate(srcBatch):
             # get particular timestamp of all the batches together
+            
             srcEmbedIndex = self.getIndex(row, inference=inference)
             # srcEmbedIndex is of dimension: batchsize (particular timestep word in all sentences of that batch)
             if self.cnfg.use_reverse:
@@ -667,8 +671,8 @@ class SeqToSeqAttn():
 
         tgtEmbedIndex = self.getIndex(row, inference=inference)
         # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
-        out, self.hidden, c_0 = self.decoder(batch.shape[1], tgtEmbedIndex, None, None, self.hidden,
-                                             feedContextVector=True, contextVector=c_0)
+        out, self.hidden, c_0 = self.decoder(batch.shape[1], tgtEmbedIndex, None,None, None, self.hidden,
+                                             feedContextVector=True, contextVector=c_0,at_flag=False)
 
         if self.cnfg.mem_optimize:
             if not self.cnfg.context_dropout:
@@ -682,19 +686,19 @@ class SeqToSeqAttn():
         encoderOutTensor = torch.stack([encoderOut for encoderOut in encoderOuts], dim=0)
         for rowId, row in enumerate(batch):
             # iterate over timestamps of target side
+            
             tgtEmbedIndex = self.getIndex(row, inference=inference)
             o_t = decoderOuts[-1]
 
             # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
             if not self.cnfg.pointer:
-                out, self.hidden, c_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t, self.hidden,
-                                                     feedContextVector=False)
+                out, self.hidden, c_t = self.decoder(batch.shape[1],tgtEmbedIndex,tgts encoderOutTensor, o_t, self.hidden,
+                                                     feedContextVector=False,at_flag=True)
             else:
-                out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, encoderOutTensor, o_t,
+                out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, tgtsencoderOutTensor, o_t,
                                                           self.hidden,
-                                                          feedContextVector=False)
+                                                          feedContextVector=False,at_flag=True)
             # hidden layer passed as argument in next iteration
-
             tgts.append(self.getIndex(row))
             decoderOuts.append(out.squeeze(0))
 
