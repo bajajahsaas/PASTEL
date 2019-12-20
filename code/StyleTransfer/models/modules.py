@@ -157,6 +157,7 @@ class AttnDecoderRNN(nn.Module):
                 self.decoder = nn.LSTM(self.emb_size, self.hidden_size)
             else:
                 self.decoder = nn.GRU(self.emb_size, self.hidden_size)
+        self.lin = LinearLayer(self.hidden_size + self.emb_size, self.hidden_size)        
 
     def forward(self, batchSize, tgtEmbedIndex,x, encoderOutTensor, o_t, hidden, feedContextVector=False,
                 contextVector=None, inference=False, getAtt=False,at_flag=False):
