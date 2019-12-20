@@ -177,8 +177,34 @@ class AttnDecoderRNN(nn.Module):
             else:
                 c_t=contextVector
 
-
+             
         tgtEmbeds=self.embeddings(tgtEmbedIndex)
+	
+	if inference==False and decod_attn==True and decAttn==True:
+            if(len(x)>1):
+                hist=torch.stack(x,dim=0)
+                hist_embs=self.embeddings(hist)
+                o_t_exp=tgtEmbeds.expand(hist_embs.size())
+                dotProduct1=torch.transpose(torch.sum(torch.mul(hist_embs,o_t_exp),2),0,1)
+                alphas1=torch.transpose(F.softmax(dotProduct1),0,1).unsqueeze(2).expand(hist_embs.size())
+                c_t1=torch.squeeze(torch.sum(alphas1*hist_embs,0),0)
+                c=torch.cat([c_t1,c_t],1)
+                c_t=self.lin(c)
+                
+
+        if inference==True and decod_attn==True and decAttn==True:
+            l=[]
+            for i in range(x.size()[1]):
+                l.append((self.embeddings(x[0][i]).unsqueeze(0)))
+            if(len(l)>0):
+                tmp=torch.stack(l,dim=0)
+                o_t_exp=tgtEmbeds.expand(tmp.size())
+                dotProduct1=torch.transpose(torch.sum(torch.mul(tmp,o_t_exp),2),0,1)
+                alphas1=torch.transpose(F.softmax(dotProduct1),0,1).unsqueeze(2).expand(tmp.size())
+                c_t1=torch.squeeze(torch.sum(alphas1*tmp,0),0)
+                c=torch.cat([c_t1,c_t],0)
+                c_t=self.lin(c)
+	
         if inference:
             c_t=c_t.view(1,-1)
         if self.use_attention:
