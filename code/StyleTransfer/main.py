@@ -142,5 +142,6 @@ else:
     import solver
     print('Pointer method is : ', params.pointer)
     print('Decoder self attention is : ', params.decAttn)
+    print('Decoding method is: ', params.method)
     seq2seq = solver.Solver(params)
     seq2seq.main()
