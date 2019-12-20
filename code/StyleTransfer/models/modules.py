@@ -158,8 +158,8 @@ class AttnDecoderRNN(nn.Module):
             else:
                 self.decoder = nn.GRU(self.emb_size, self.hidden_size)
 
-    def forward(self, batchSize, tgtEmbedIndex, encoderOutTensor, o_t, hidden, feedContextVector=False,
-                contextVector=None, inference=False, getAtt=False):
+    def forward(self, batchSize, tgtEmbedIndex,x, encoderOutTensor, o_t, hidden, feedContextVector=False,
+                contextVector=None, inference=False, getAtt=False,at_flag=False):
 
         if self.use_attention:
             if not feedContextVector:
@@ -189,7 +189,7 @@ class AttnDecoderRNN(nn.Module):
 
         tgtEmbeds = self.embeddings(tgtEmbedIndex)
 
-        if inference == False and self.decAttn == True:
+        if inference == False and self.decAttn == True and at_flag==True:
             if (len(x) > 1):
                 hist = torch.stack(x, dim=0)
                 hist_embs = self.embeddings(hist)
@@ -200,7 +200,7 @@ class AttnDecoderRNN(nn.Module):
                 c = torch.cat([c_t1, c_t], 1)
                 c_t = self.lin(c)
 
-        if inference == True and self.decAttn == True:
+        if inference == True and self.decAttn == True and at_flag==True:
             l = []
             for i in range(x.size()[1]):
                 l.append((self.embeddings(x[0][i]).unsqueeze(0)))
