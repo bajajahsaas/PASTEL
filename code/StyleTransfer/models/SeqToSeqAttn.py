@@ -695,7 +695,7 @@ class SeqToSeqAttn():
                 out, self.hidden, c_t = self.decoder(batch.shape[1],tgtEmbedIndex,tgts encoderOutTensor, o_t, self.hidden,
                                                      feedContextVector=False,at_flag=True)
             else:
-                out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, tgtsencoderOutTensor, o_t,
+                out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, tgts,encoderOutTensor, o_t,
                                                           self.hidden,
                                                           feedContextVector=False,at_flag=True)
             # hidden layer passed as argument in next iteration
