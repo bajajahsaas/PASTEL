@@ -692,7 +692,7 @@ class SeqToSeqAttn():
 
             # forward(self,batchSize,tgtEmbedIndex,encoderOutTensor,o_t,hidden,feedContextVector=False,contextVector=None)
             if not self.cnfg.pointer:
-                out, self.hidden, c_t = self.decoder(batch.shape[1],tgtEmbedIndex,tgts encoderOutTensor, o_t, self.hidden,
+                out, self.hidden, c_t = self.decoder(batch.shape[1],tgtEmbedIndex,tgts ,encoderOutTensor, o_t, self.hidden,
                                                      feedContextVector=False,at_flag=True)
             else:
                 out, self.hidden, c_t, a_t = self.decoder(batch.shape[1], tgtEmbedIndex, tgts,encoderOutTensor, o_t,
